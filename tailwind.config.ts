@@ -46,11 +46,6 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      fontFamily: {
-        heading: ['var(--font-heading)'],
-        body: ['var(--font-body)'],
-        mono: ['var(--font-mono)'],
-      },
       animation: {
         'spin-slow': 'spin 2s linear infinite',
         'fade-in': 'fade-in 0.4s ease-out forwards',
