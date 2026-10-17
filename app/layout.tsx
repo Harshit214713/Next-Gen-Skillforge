@@ -1,23 +1,30 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Fraunces } from 'next/font/google';
+import { Space_Grotesk, Inter } from 'next/font/google';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-heading',
+  weight: ['400', '500', '600', '700'],
 });
 
-const fraunces = Fraunces({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
   title: 'Next-Gen Skillforge',
-  description: 'AI-driven career profile analysis and learning roadmap',
+  description: 'AI-driven career profile analysis, skill graphs, job recommendations, and learning roadmaps.',
   icons: {
     icon: '/next-gen-skillforge-logo.svg',
     shortcut: '/next-gen-skillforge-logo.svg',
+  },
+  openGraph: {
+    title: 'Next-Gen Skillforge',
+    description: 'AI-driven career profile analysis and learning roadmap.',
+    type: 'website',
   },
 };
 
@@ -43,7 +50,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} ${fraunces.variable}`}>{children}</body>
+      <body className={`${spaceGrotesk.variable} ${inter.variable}`}>{children}</body>
     </html>
   );
 }
