@@ -1,7 +1,6 @@
 # Next-Gen Skillforge
 
-> Technocrats Innovation Challenge - 2k26  
-> Team Name: Next-Gen Builders
+> AI-powered career intelligence dashboard
 
 [![Contributors](https://img.shields.io/github/contributors/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/graphs/contributors)
 [![Issues](https://img.shields.io/github/issues/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/issues)
@@ -40,7 +39,7 @@ Next-Gen Skillforge is an AI-powered career intelligence dashboard built with Ne
 ## Architecture Overview
 
 ```text
-TIC-2K26-Next-Gen-Builders/
+next-gen-skillforge/
 ├── app/
 │   ├── page.tsx
 │   │   └── Interactive dashboard UI, link input, resume import, analysis trigger, and results panels.
