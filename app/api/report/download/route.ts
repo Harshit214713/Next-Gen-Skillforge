@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { UserProfile } from '@/lib/types';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 interface DownloadReportBody {
   profile?: UserProfile;

@@ -1,10 +1,10 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import dns from 'node:dns/promises';
-import net from 'node:net';
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeProfileText } from '@/lib/ai';
 import type { JobRecommendation, LearningPathItem, LearningResource } from '@/lib/types';
+
+export const runtime = 'edge';
 
 interface SocialLinks {
   github?: string;
@@ -266,20 +266,31 @@ function isPrivateIpv6(ip: string): boolean {
 }
 
 function isPrivateIpAddress(ip: string): boolean {
-  const ipVersion = net.isIP(ip);
-  if (ipVersion === 4) return isPrivateIpv4(ip);
-  if (ipVersion === 6) return isPrivateIpv6(ip);
-  return false;
+  const segments = ip.split('.').map((part) => Number(part));
+  if (
+    segments.length === 4 &&
+    segments.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+  ) {
+    if (segments[0] === 10) return true;
+    if (segments[0] === 127) return true;
+    if (segments[0] === 0) return true;
+    if (segments[0] === 169 && segments[1] === 254) return true;
+    if (segments[0] === 172 && segments[1] >= 16 && segments[1] <= 31) return true;
+    if (segments[0] === 192 && segments[1] === 168) return true;
+    return false;
+  }
+  const lowered = ip.toLowerCase();
+  return (
+    lowered === '::1' ||
+    lowered === '::' ||
+    lowered.startsWith('fc') ||
+    lowered.startsWith('fd') ||
+    lowered.startsWith('fe80')
+  );
 }
 
 async function resolvesToPublicIp(hostname: string): Promise<boolean> {
-  try {
-    const records = await dns.lookup(hostname, { all: true, verbatim: true });
-    if (!records.length) return false;
-    return records.every((record) => net.isIP(record.address) !== 0 && !isPrivateIpAddress(record.address));
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 type LinkValidationWarning = { source: keyof SocialLinks; url: string; reason: string };

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDashboardSession, type ThemeMode } from '@/lib/session';
 import type { SocialLinks } from '@/lib/types';
 
+export const runtime = 'edge';
+
 const LINK_KEYS = ['github', 'linkedin', 'resume', 'twitter', 'portfolio', 'devto'] as const;
 
 function sanitizeTheme(input: unknown): ThemeMode | undefined {

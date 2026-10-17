@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDashboardSession, type AnalysisSessionData } from '@/lib/session';
 import type { SocialLinks, UserProfile } from '@/lib/types';
 
+export const runtime = 'edge';
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }

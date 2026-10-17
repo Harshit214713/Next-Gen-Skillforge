@@ -3,6 +3,12 @@
 > Technocrats Innovation Challenge - 2k26  
 > Team Name: Next-Gen Builders
 
+[![Contributors](https://img.shields.io/github/contributors/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/graphs/contributors)
+[![Issues](https://img.shields.io/github/issues/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/issues)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Hosted on Cloudflare Pages](https://img.shields.io/badge/Hosted%20on-Cloudflare%20Pages-F38020?logo=cloudflare)](https://pages.cloudflare.com/)
+
+
 Next-Gen Skillforge is an AI-powered career intelligence dashboard built with Next.js. It analyzes public profile links and resume content, extracts skill signals, generates role-fit insights, and creates a personalized learning roadmap.
 
 ## Core Functionality
@@ -69,6 +75,25 @@ TIC-2K26-Next-Gen-Builders/
 3. Review skill graphs, recommendations, ATS feedback, and learning path.
 4. Download the generated PDF report.
 5. Return later with session-restored preferences and analysis (when link signature matches).
+
+## Contributing
+
+We welcome contributions from **Nexus Spring of Code** participants and the open source community! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+
+Good starting points are issues labeled `good first issue` and `help wanted`.
+
+## Deployment
+
+This project is hosted on **Cloudflare Pages** using the [Next.js on Cloudflare Pages](https://developers.cloudflare.com/pages/framework-guides/nextjs/) integration.
+
+### Deploying to Cloudflare Pages
+
+1. Connect your GitHub repository to [Cloudflare Pages](https://dash.cloudflare.com/pages).
+2. Set the build command to `npm run build:cf`.
+3. Set the build output directory to `.next`.
+4. Add any required environment variables (e.g. API keys) in the Pages dashboard.
+
+Environment variables are configured via `wrangler.toml` and the Cloudflare dashboard.
 
 ## Notes
 

@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import type { UserProfile } from '@/lib/types';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -113,36 +111,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid profile payload.' }, { status: 400 });
   }
 
-  const workspaceRoot = process.cwd();
-  const libDir = path.join(workspaceRoot, 'lib');
-  const generatedProfilePath = path.join(libDir, 'generatedUserProfile.ts');
-  const jsonFallbackPath = path.join(libDir, 'generatedUserProfile.json');
-
-  try {
-    await mkdir(libDir, { recursive: true });
-    await writeFile(generatedProfilePath, toTsModule(profile), 'utf8');
-
-    return NextResponse.json({
-      ok: true,
-      format: 'ts',
-      path: 'lib/generatedUserProfile.ts',
-    });
-  } catch (writeError) {
-    try {
-      await writeFile(jsonFallbackPath, `${JSON.stringify(profile, null, 2)}\n`, 'utf8');
-
-      return NextResponse.json({
-        ok: true,
-        format: 'json',
-        path: 'lib/generatedUserProfile.json',
-        warning: 'Failed to write TypeScript snapshot. JSON fallback generated.',
-      });
-    } catch {
-      console.error('Profile snapshot write failed', writeError);
-      return NextResponse.json(
-        { error: 'Failed to persist profile snapshot to TypeScript and JSON files.' },
-        { status: 500 },
-      );
-    }
-  }
+  return NextResponse.json({
+    ok: true,
+    format: 'json',
+    profile,
+    message: 'Filesystem writes are not supported on this platform. Use the returned JSON directly.',
+  });
 }
