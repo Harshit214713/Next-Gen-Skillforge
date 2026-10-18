@@ -4,9 +4,9 @@ Thank you for your interest in contributing! This project is open to contributor
 
 ## Architecture
 
-- **Frontend**: Next.js static export deployed to Cloudflare Pages (`app/`, `components/`, `lib/`)
-- **Backend**: Cloudflare Worker (Hono) deployed to `workers.dev` (`src/`)
-- The frontend calls the Worker API via `NEXT_PUBLIC_API_URL`
+- **Single app**: one Cloudflare Worker serving the Hono API on `/api/*` plus the Next.js static export from `out/` (Workers Assets)
+- Frontend lives in `app/`, `components/`, `lib/`; Worker backend lives in `src/`
+- The frontend calls the API on the same origin via relative paths (`/api/...`)
 
 ## Getting Started
 
@@ -43,7 +43,7 @@ Thank you for your interest in contributing! This project is open to contributor
    npm run lint        # ESLint
    npm run typecheck   # TypeScript
    npm run test        # Vitest
-   npm run build:cf    # Next.js static export
+   npm run build       # Next.js static export
    ```
 
 8. Commit and push:
@@ -65,9 +65,8 @@ Every PR must pass the following GitHub Actions checks before it can be merged:
 | Lint | `npm run lint` |
 | Type Check | `npm run typecheck` |
 | Tests | `npm run test` |
-| Build | `npm run build:cf` |
 
-Branch protection on `main** requires all four checks to pass. PRs cannot be merged if any check fails.
+Branch protection on `main` requires all three checks to pass. PRs cannot be merged if any check fails.
 
 ## How to Contribute
 
@@ -86,7 +85,7 @@ Branch protection on `main** requires all four checks to pass. PRs cannot be mer
 
 ## Deployment
 
-This project is deployed to **Cloudflare** (Pages for frontend, Workers for backend). See the Deployment section in README for details.
+This project is deployed to **Cloudflare** as a single Worker (API + static frontend) via `npm run deploy`. See the Deployment section in README for details.
 
 ## Code of Conduct
 

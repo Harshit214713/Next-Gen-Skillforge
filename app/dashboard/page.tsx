@@ -1,0 +1,391 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '@/components/ui/toast';
+import { apiGet, apiPost, apiDelete } from '@/lib/api-client';
+import type { DashboardPreferences, SocialLinks, UserProfile } from '@/lib/types';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { ProgressWithLabel } from '@/components/ui/progress';
+import { SkeletonCard } from '@/components/ui/skeleton';
+import {
+  TrendingUp,
+  FileText,
+  Briefcase,
+  Users,
+  RefreshCw,
+  AlertCircle,
+  Upload,
+  Download,
+  ArrowRight,
+  Sparkles,
+  BookOpen,
+} from 'lucide-react';
+import Link from 'next/link';
+
+const EMPTY_LINKS: SocialLinks = {
+  github: '',
+  linkedin: '',
+  resume: '',
+  twitter: '',
+  portfolio: '',
+  devto: '',
+};
+
+export default function DashboardPage() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [preferences, setPreferences] = useState<DashboardPreferences>({});
+  const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchSession = useCallback(async () => {
+    try {
+      const [prefResp, analysisResp] = await Promise.all([
+        apiGet('/api/session/preferences'),
+        apiGet('/api/session/analysis'),
+      ]);
+
+      const prefData = prefResp as { theme?: string; links?: Partial<SocialLinks> };
+      if (prefData?.theme === 'light' || prefData?.theme === 'dark') {
+        setPreferences({ theme: prefData.theme, links: prefData.links });
+      }
+
+      const analysis = (analysisResp as {
+        analysis?: { profile?: UserProfile } | null;
+      })?.analysis;
+
+      if (analysis?.profile) {
+        setSavedProfile(analysis.profile);
+      }
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSession();
+  }, [fetchSession]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchSession();
+      toast({
+        title: 'Session refreshed',
+        description: 'Your latest data has been loaded.',
+        variant: 'success',
+      });
+    } catch {
+      toast({
+        title: 'Refresh failed',
+        description: 'Unable to load session data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleDeleteAnalysis = async () => {
+    try {
+      await apiDelete('/api/session/analysis');
+      setSavedProfile(null);
+      toast({
+        title: 'Analysis cleared',
+        variant: 'success',
+      });
+    } catch {
+      toast({
+        title: 'Clear failed',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const profile = savedProfile;
+  const hasAnalysis = !!profile;
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Manage your profile, analysis, and career roadmap.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={refreshing ? 'animate-spin h-4 w-4' : 'h-4 w-4'} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Industry Relevance
+              </p>
+              <p className="text-3xl font-bold">
+                {profile?.aiSummary.industryRelevanceScore ?? 0}%
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ProgressWithLabel
+              value={profile?.aiSummary.industryRelevanceScore ?? 0}
+              label="Industry demand match"
+              showValue={false}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                ATS Score
+              </p>
+              <p className="text-3xl font-bold">
+                {profile?.aiSummary.atsScore ?? (profile ? 0 : '—')}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+              <FileText className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ProgressWithLabel
+              value={profile?.aiSummary.atsScore ?? 0}
+              label={profile ? 'Resume ATS readiness' : 'Upload a resume'}
+              showValue={false}
+              color="accent"
+            />
+            {!profile && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Upload a resume to generate ATS scoring.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Technical Skills
+              </p>
+              <p className="text-3xl font-bold">
+                {profile?.technicalSkills.length ?? 0}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-secondary-foreground">
+              <Briefcase className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Skills detected from your profile
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Soft Skills
+              </p>
+              <p className="text-3xl font-bold">
+                {profile?.softSkills.length ?? 0}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+              <Users className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Communication & interpersonal skills
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-3 mb-8">
+        <Card className="sm:col-span-2">
+          <CardHeader className="pb-4">
+            <h2 className="text-lg font-bold">Quick Actions</h2>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Link
+                href="/profile"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Setup Profile
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/analysis"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  View Analysis
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/report"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Download Report
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-4">
+            <h2 className="text-lg font-bold">Session</h2>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Theme</span>
+              <Badge variant="default" className="text-xs px-2 py-1">
+                {preferences.theme === 'dark' ? 'Dark' : 'Light'}
+              </Badge>
+            </div>
+            {hasAnalysis && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAnalysis}
+                className="w-full"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Clear Analysis
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {hasAnalysis && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-4">
+              <h2 className="text-lg font-bold">AI Summary</h2>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                {profile.aiSummary.overview || 'No summary available.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {profile.aiSummary.topSkills.slice(0, 5).map((skill) => (
+                  <Badge key={skill} variant="default" className="text-xs">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <h2 className="text-lg font-bold">Job Matches</h2>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-3xl font-bold mb-2">{profile.jobRecommendations.length}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Opportunities matched to your profile.
+              </p>
+              <Link
+                href="/analysis"
+                className="text-sm font-medium text-primary underline"
+              >
+                View all recommendations →
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <h2 className="text-lg font-bold">Learning Path</h2>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-3xl font-bold mb-2">{profile.learningPath.length}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Steps to close your skill gaps.
+              </p>
+              <Link
+                href="/learning"
+                className="text-sm font-medium text-primary underline"
+              >
+                View learning path →
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {!hasAnalysis && (
+        <div className="rounded-xl border border-dashed border-background bg-background p-12 text-center">
+          <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-secondary/50 mb-4">
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-bold text-foreground mb-2">No analysis yet</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+            Connect your profiles or upload a resume to get AI-powered skill analysis,
+            job recommendations, and a personalized learning path.
+          </p>
+          <Link
+            href="/profile"
+            className="inline-flex h-10 items-center rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary-hover transition-colors px-4"
+          >
+            Set up profile <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}

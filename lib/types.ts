@@ -7,6 +7,13 @@ export interface SocialLinks {
   devto: string;
 }
 
+export type ThemeMode = 'light' | 'dark';
+
+export interface DashboardPreferences {
+  theme?: ThemeMode;
+  links?: Partial<SocialLinks>;
+}
+
 export interface SkillData {
   skill: string;
   value: number;

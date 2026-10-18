@@ -13,14 +13,13 @@ Next-Gen Skillforge is an AI-powered career intelligence dashboard. It analyzes 
 
 ## Architecture
 
-The project is split into two independently deployed parts on Cloudflare:
+The app deploys as a single Cloudflare Worker:
 
 | Component | Platform | Purpose |
 |-----------|----------|---------|
-| **Frontend** | Cloudflare Pages | Next.js static export serving the dashboard UI |
-| **Backend** | Cloudflare Workers | Hono-based API handling session, analysis, resume import, and PDF report generation |
+| **App** | Cloudflare Workers | Hono API on `/api/*` + Next.js static export served from `out/` via Workers Assets |
 
-The frontend calls the Worker backend via `NEXT_PUBLIC_API_URL`. Session data is stored in Workers KV with encrypted cookies.
+The frontend calls the API on the same origin using relative paths (`/api/...`), so no CORS setup or `NEXT_PUBLIC_API_URL` is needed. Session data is stored in Workers KV with encrypted cookies.
 
 ## Core Functionality
 
@@ -43,7 +42,7 @@ The frontend calls the Worker backend via `NEXT_PUBLIC_API_URL`. Session data is
 - Tailwind CSS
 - Framer Motion
 - Recharts
-- Hono (Worker API)
+- Hono + Cloudflare Workers (API + static assets)
 - Vitest (testing)
 - Cloudflare Workers KV (session storage)
 
@@ -51,21 +50,26 @@ The frontend calls the Worker backend via `NEXT_PUBLIC_API_URL`. Session data is
 
 ```text
 next-gen-skillforge/
-├── app/                 # Next.js frontend (App Router)
-│   ├── page.tsx         # Dashboard UI
-│   └── layout.tsx       # Root layout
+├── app/                 # Next.js frontend (App Router, static export)
+│   ├── page.tsx         # Landing page
+│   ├── layout.tsx       # Root layout (sidebar, theme, toasts)
+│   ├── dashboard/       # Dashboard (stats, quick actions, saved analysis)
+│   ├── profile/         # Profile setup (links, resume upload)
+│   ├── analysis/        # Skill/job analysis (summary, charts, recommendations)
+│   ├── learning/        # Personalized learning path
+│   └── report/          # Downloadable PDF report
 ├── components/          # React components
-│   ├── layout/
-│   ├── sections/
-│   └── ui/
+│   ├── layout/          # App shell (sidebar navigation)
+│   ├── sections/        # Landing page sections
+│   └── ui/              # UI kit (buttons, cards, toasts, skeletons, ...)
 ├── lib/                 # Shared libraries
-│   ├── api-client.ts    # Fetch-based API client (calls Worker)
+│   ├── api-client.ts    # Fetch-based API client (same-origin /api calls)
 │   ├── ai.ts            # AI provider adapters (OpenAI, Anthropic, etc.)
 │   ├── profileDefaults.ts
 │   ├── types.ts
 │   └── utils.ts
 ├── src/                 # Cloudflare Worker backend
-│   ├── index.ts         # Hono app entry point + routing
+│   ├── index.ts         # Worker entry: routes /api/* to Hono, everything else to static assets
 │   ├── session.ts       # KV-backed encrypted cookie sessions
 │   ├── types.ts         # Worker types
 │   └── routes/          # API route handlers
@@ -74,7 +78,7 @@ next-gen-skillforge/
 │       ├── resume.ts
 │       └── report.ts
 ├── public/              # Static assets
-├── wrangler.toml        # Worker configuration
+├── wrangler.toml        # Worker configuration (API + assets + KV binding)
 ├── next.config.mjs      # Next.js config (static export)
 ├── vitest.config.ts     # Test configuration
 └── package.json
@@ -105,28 +109,29 @@ npx wrangler kv:namespace create "SESSION_KV"
 npx wrangler secret put SESSION_SECRET
 # Value must be at least 32 characters
 
-# Start the Worker locally (port 8787)
+# Full local app: build the frontend, then serve UI + API together (port 8787)
+npm run build
 npm run dev:worker
 
-# Start the Next.js frontend locally (port 3000)
+# Frontend-only iteration with hot reload (port 3000, no API)
 npm run dev
 ```
 
-The frontend calls `https://next-gen-skillforge.divyanshakya.workers.dev` by default. Override with `NEXT_PUBLIC_API_URL` if using a custom Worker URL.
+`wrangler dev` serves the static export from `out/` and the Hono API on the same origin, so the whole app works at `http://localhost:8787`. The frontend uses relative `/api/...` paths, so no environment variables are required for local development.
 
 ### Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start Next.js dev server |
-| `npm run dev:worker` | Start Worker locally with wrangler |
-| `npm run build` | Build Next.js production bundle |
-| `npm run build:cf` | Build static export for Cloudflare Pages (`out/`) |
-| `npm run deploy:worker` | Deploy Worker to Cloudflare |
-| `npm run deploy:cf` | Deploy static frontend to Cloudflare Pages |
+| `npm run dev` | Start Next.js dev server (frontend only) |
+| `npm run dev:worker` | Serve UI + API locally with wrangler (port 8787) |
+| `npm run build` | Build Next.js static export (`out/`) |
+| `npm run build:cf` | Alias of `npm run build` |
+| `npm run deploy` | Deploy Worker (API + static assets) to Cloudflare |
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run TypeScript type check |
 | `npm run test` | Run Vitest test suite |
+| `npm run test:watch` | Run Vitest in watch mode |
 
 ## CI/CD
 
@@ -135,30 +140,22 @@ GitHub Actions runs on every push and PR to `main`:
 1. **Lint** — ESLint
 2. **Type Check** — `tsc --noEmit`
 3. **Tests** — Vitest unit tests
-4. **Build** — Next.js static export (`out/`)
-5. **Deploy** (main branch only) — Worker + Pages deployment
 
-Required secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
-
-| Secret | Description |
-|--------|-------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers/Pages edit permissions |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+Deployment is done manually with `npm run deploy` (requires `wrangler login`).
 
 ## Deployment
 
-### Frontend (Cloudflare Pages)
+The app is deployed as a single Cloudflare Worker (Hono API + static frontend):
 
-1. Connect the repository to Cloudflare Pages.
-2. Build command: `npm run build:cf`
-3. Output directory: `out/`
-4. Environment variables: `NEXT_PUBLIC_API_URL` (Worker URL)
+1. One-time setup: create the `SESSION_KV` namespace and set `SESSION_SECRET` (see Setup above).
+2. Build and deploy:
 
-### Backend (Cloudflare Workers)
+```bash
+npm run build
+npm run deploy
+```
 
-1. Run `npx wrangler deploy src/index.ts`
-2. Ensure `SESSION_KV` KV namespace is bound in `wrangler.toml`
-3. Ensure `SESSION_SECRET` is set via `wrangler secret put SESSION_SECRET`
+`wrangler deploy` uploads the Worker code and the contents of `out/` (Workers Assets). The Worker routes `/api/*` to Hono and serves everything else from the static export.
 
 ## Testing
 
@@ -173,7 +170,7 @@ Tests cover session encryption/cookie handling, link/sanitization validation, an
 
 We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
 
-All PRs must pass the CI checks (lint, typecheck, tests, build) before merging to `main`.
+All PRs must pass the CI checks (lint, typecheck, tests) before merging to `main`.
 
 Good starting points are issues labeled `good first issue` and `help wanted`.
 

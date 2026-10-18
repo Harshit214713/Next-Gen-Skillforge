@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import { ToastProvider } from '@/components/ui/toast';
+import { Sidebar } from '@/components/layout/sidebar';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Next-Gen Skillforge',
@@ -37,7 +42,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className={`${inter.variable} antialiased min-h-screen bg-background text-foreground`}>
+        <ToastProvider />
+        <Sidebar />
+        <div className="md:pl-64 min-h-screen">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

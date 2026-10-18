@@ -218,11 +218,8 @@ async function callHuggingFace(prompt: string): Promise<string> {
   const token = process.env.HF_API_TOKEN;
   if (!token) throw new Error('HF_API_TOKEN missing');
 
-  // Use a modern instruction-tuned model instead of GPT-2 (from 2019)
-  // Mistral-7B-Instruct can follow JSON instructions reliably
   const model = process.env.HF_MODEL || 'mistralai/Mistral-7B-Instruct-v0.1';
 
-  // Wrap prompt with instruction tags that modern models expect
   const formattedPrompt = `[INST] ${prompt} [/INST]`;
 
   const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
@@ -248,7 +245,6 @@ async function callHuggingFace(prompt: string): Promise<string> {
 
   const data = await response.json();
 
-  // Extract the generated text (handles both array and object responses)
   let generatedText = '';
   if (Array.isArray(data) && data[0]?.generated_text) {
     generatedText = data[0].generated_text;
@@ -256,8 +252,6 @@ async function callHuggingFace(prompt: string): Promise<string> {
     generatedText = data.generated_text;
   }
 
-  // Strip the instruction tags from the response if they're included
-  // This handles cases where the model echoes back the tags
   const cleanedText = generatedText
     .replace(/^\[INST\]\s*/, '')
     .replace(/\s*\[\/INST\]\s*/, '')
