@@ -1,5 +1,3 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://next-gen-skillforge.divyanshakya.workers.dev';
-
 async function handleResponse(response: Response): Promise<unknown> {
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -13,7 +11,7 @@ async function handleResponse(response: Response): Promise<unknown> {
 }
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  return fetch(`${API_BASE_URL}${path}`, {
+  return fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -42,7 +40,7 @@ export async function apiDelete(path: string): Promise<unknown> {
 }
 
 export async function apiPostForm(path: string, formData: FormData): Promise<unknown> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(path, {
     method: 'POST',
     body: formData,
     credentials: 'include',

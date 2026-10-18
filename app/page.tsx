@@ -168,8 +168,7 @@ export default function HomePage() {
     setAnalysisError(null);
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://next-gen-skillforge.divyanshakya.workers.dev';
-      const response = await fetch(`${apiBase}/api/report/download`, {
+      const response = await fetch('/api/report/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: getCurrentProfile() }),
@@ -438,9 +437,8 @@ export default function HomePage() {
     }
 
     const requestController = new AbortController();
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://next-gen-skillforge.divyanshakya.workers.dev';
     const saveTimer = window.setTimeout(() => {
-      void fetch(`${API_BASE_URL}/api/session/preferences`, {
+      void fetch('/api/session/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme, links }),
