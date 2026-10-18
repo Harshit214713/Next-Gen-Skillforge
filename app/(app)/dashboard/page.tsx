@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { apiGet, apiDelete } from '@/lib/api-client';
-import type { SocialLinks, UserProfile } from '@/lib/types';
+import type { UserProfile } from '@/lib/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -24,15 +24,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const EMPTY_LINKS: SocialLinks = {
-  github: '',
-  linkedin: '',
-  resume: '',
-  twitter: '',
-  portfolio: '',
-  devto: '',
-};
-
 export default function DashboardPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -51,23 +42,23 @@ export default function DashboardPage() {
   }, []);
 
   const fetchSession = useCallback(async () => {
-    try {
-      const analysisResp = await apiGet('/api/session/analysis');
-      const analysis = (analysisResp as {
-        analysis?: { profile?: UserProfile } | null;
-      })?.analysis;
+    const analysisResp = await apiGet('/api/session/analysis');
+    const analysis = (analysisResp as {
+      analysis?: { profile?: UserProfile } | null;
+      stale?: boolean;
+    })?.analysis;
 
-      if (analysis?.profile) {
-        setSavedProfile(analysis.profile);
-      }
-    } catch {
-    } finally {
-      setLoading(false);
+    if (analysis?.profile) {
+      setSavedProfile(analysis.profile);
+    } else {
+      setSavedProfile(null);
     }
   }, []);
 
   useEffect(() => {
-    fetchSession();
+    fetchSession()
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [fetchSession]);
 
   const handleRefresh = async () => {

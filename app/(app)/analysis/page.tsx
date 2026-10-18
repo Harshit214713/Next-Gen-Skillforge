@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/toast';
 import {
   apiGet,
   apiDelete,
+  apiPost,
 } from '@/lib/api-client';
 import type { UserProfile, JobRecommendation, SkillData, LearningPathItem } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -23,6 +24,7 @@ import {
   BarChart3,
   Briefcase,
   BookOpen,
+  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -52,6 +54,35 @@ export default function AnalysisPage() {
   useEffect(() => {
     fetchAnalysis();
   }, [fetchAnalysis]);
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    try {
+      const response = (await apiPost('/api/analyze', {})) as {
+        analysis?: { profile?: UserProfile } | null;
+        engine?: string;
+        warnings?: Array<{ source: string; reason: string }>;
+      };
+      setProfile(response.analysis?.profile ?? null);
+      setError(null);
+      const warningNote = response.warnings?.length
+        ? ` (${response.warnings.length} source warning${response.warnings.length === 1 ? '' : 's'})`
+        : '';
+      toast({
+        title: 'Analysis complete',
+        description: `Profile analyzed with the ${response.engine === 'ai' ? 'AI' : 'built-in'} engine${warningNote}.`,
+        variant: 'success',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Analysis failed',
+        description: err?.message || 'Could not analyze your profile. Check your links and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -90,19 +121,7 @@ export default function AnalysisPage() {
   const handleDownloadReport = async () => {
     if (!profile) return;
     try {
-      const response = await fetch('/api/report/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error((payload as { error?: string })?.error || 'Failed to generate report.');
-      }
-
-      const blob = await response.blob();
+      const blob = (await apiPost('/api/report/download', { profile })) as Blob;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       const stamp = new Date().toISOString().slice(0, 10);
@@ -165,12 +184,18 @@ export default function AnalysisPage() {
             <p className="text-sm text-muted-foreground mb-6">
               Add your profile links and run analysis to get started.
             </p>
-            <Link
-              href="/profile"
-              className="inline-flex h-10 items-center rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary-hover transition-colors px-4"
-            >
-              Go to Profile
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <Button onClick={handleAnalyze} disabled={analyzing} className="flex items-center gap-2">
+                <Play className={`h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />
+                {analyzing ? 'Analyzing...' : 'Run Analysis'}
+              </Button>
+              <Link
+                href="/profile"
+                className="inline-flex h-10 items-center rounded-md border border-input bg-background text-sm font-medium text-foreground hover:bg-secondary transition-colors px-4"
+              >
+                Go to Profile
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -188,12 +213,18 @@ export default function AnalysisPage() {
               Set up your profile first, then run AI analysis to see your skill graphs,
               job matches, and learning path.
             </p>
-            <Link
-              href="/profile"
-              className="inline-flex h-10 items-center rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary-hover transition-colors px-4"
-            >
-              Set up Profile
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <Button onClick={handleAnalyze} disabled={analyzing} className="flex items-center gap-2">
+                <Play className={`h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />
+                {analyzing ? 'Analyzing...' : 'Run Analysis'}
+              </Button>
+              <Link
+                href="/profile"
+                className="inline-flex h-10 items-center rounded-md border border-input bg-background text-sm font-medium text-foreground hover:bg-secondary transition-colors px-4"
+              >
+                Set up Profile
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -211,9 +242,19 @@ export default function AnalysisPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Play className={`h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />
+            {analyzing ? 'Analyzing...' : 'Run Analysis'}
+          </Button>
+          <Button
             onClick={handleRefresh}
             disabled={refreshing}
             size="sm"
+            variant="outline"
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />

@@ -17,8 +17,11 @@ const mockKV = new Map<string, string>();
 const mockEnv: Env = {
   SESSION_KV: {
     get: vi.fn(async (key: string) => mockKV.get(key) ?? null),
-    put: vi.fn(async (key: string, value: string, options?: { expirationTtl?: number }) => {
+    put: vi.fn(async (key: string, value: string, _options?: { expirationTtl?: number }) => {
       mockKV.set(key, value);
+    }),
+    delete: vi.fn(async (key: string) => {
+      mockKV.delete(key);
     }),
   },
   SESSION_SECRET: mockSecret,

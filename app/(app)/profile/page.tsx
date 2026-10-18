@@ -21,8 +21,10 @@ import {
   BookOpen,
   AlertCircle,
   CheckCircle,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const LINK_FIELDS: Array<{
   key: keyof SocialLinks;
@@ -79,8 +81,10 @@ const EMPTY_LINKS: SocialLinks = {
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [links, setLinks] = useState<SocialLinks>({ ...EMPTY_LINKS });
   const [errors, setErrors] = useState<Partial<Record<keyof SocialLinks, string>>>({});
@@ -92,9 +96,13 @@ export default function ProfilePage() {
       const data = (await apiGet('/api/session/preferences')) as {
         theme?: string;
         links?: Partial<SocialLinks>;
+        resumeFileName?: string | null;
       };
       if (data.links) {
         setLinks({ ...EMPTY_LINKS, ...data.links });
+      }
+      if (data.resumeFileName) {
+        setResumeFileName(data.resumeFileName);
       }
     } catch {
     } finally {
@@ -217,18 +225,37 @@ export default function ProfilePage() {
 
   const handleAnalyze = async () => {
     if (!validateLinks()) return;
-    try {
-      await apiPost('/api/session/preferences', { links });
+    const hasAnyLink = Object.values(links).some((v) => v.trim());
+    if (!hasAnyLink && !resumeFileName) {
       toast({
-        title: 'Links saved',
-        description: 'Go to Analysis to run profile analysis.',
-        variant: 'success',
-      });
-    } catch {
-      toast({
-        title: 'Save failed',
+        title: 'Nothing to analyze',
+        description: 'Add at least one profile link or import a resume first.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      await apiPost('/api/session/preferences', { links });
+      const response = (await apiPost('/api/analyze', {})) as {
+        engine?: string;
+        warnings?: Array<{ source: string; reason: string }>;
+      };
+      toast({
+        title: 'Analysis complete',
+        description: `Profile analyzed with the ${response.engine === 'ai' ? 'AI' : 'built-in'} engine.`,
+        variant: 'success',
+      });
+      router.push('/analysis');
+    } catch (error: any) {
+      toast({
+        title: 'Analysis failed',
+        description: error?.message || 'Could not analyze your profile. Try again from the Analysis page.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -259,8 +286,9 @@ export default function ProfilePage() {
             Connect your professional profiles and resume for analysis.
           </p>
         </div>
-        <Button onClick={handleAnalyze} disabled={!hasAnyLink || saving}>
-          Save & Analyze
+        <Button onClick={handleAnalyze} disabled={!hasAnyLink || saving || analyzing} className="flex items-center gap-2">
+          <Sparkles className={`h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />
+          {analyzing ? 'Analyzing...' : 'Save & Analyze'}
         </Button>
       </div>
 
@@ -307,7 +335,7 @@ export default function ProfilePage() {
                           <input
                             ref={resumeFileInputRef}
                             type="file"
-                            accept=".pdf,.doc,.docx,.txt"
+                            accept=".txt,text/plain"
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -348,6 +376,11 @@ export default function ProfilePage() {
                   <span>Resume: {resumeFileName}</span>
                 </div>
               )}
+
+              <p className="text-xs text-muted-foreground">
+                Resume import accepts plain-text (.txt) files up to 8MB. PDF/DOCX parsing is
+                not supported on this platform.
+              </p>
 
               <div className="flex items-center justify-between pt-4">
                 <span className="text-sm text-muted-foreground">

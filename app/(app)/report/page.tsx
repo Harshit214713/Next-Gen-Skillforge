@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import type { UserProfile } from '@/lib/types';
-import { apiGet } from '@/lib/api-client';
+import { apiGet, apiPost } from '@/lib/api-client';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -43,19 +43,7 @@ export default function ReportPage() {
     if (!profile) return;
     setGenerating(true);
     try {
-      const response = await fetch('/api/report/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error((payload as { error?: string })?.error || 'Failed to generate report.');
-      }
-
-      const blob = await response.blob();
+      const blob = (await apiPost('/api/report/download', { profile })) as Blob;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       const stamp = new Date().toISOString().slice(0, 10);

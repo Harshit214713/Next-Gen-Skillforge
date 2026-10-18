@@ -9,5 +9,11 @@ enabled = true
 binding = "SESSION_KV"
 id = "5773a2d63e6d49c0848b25db2f2762d5"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "NEXT_GEN_SKILLFORGE_DB"
+database_id = "700bb905-4a16-439d-a932-a4279f5e2908"
+
 [assets]
 directory = "out"
+not_found_handling = "404-page"

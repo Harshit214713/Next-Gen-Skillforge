@@ -14,12 +14,15 @@ export interface DashboardPreferences {
   links?: Partial<SocialLinks>;
 }
 
-export interface AnalysisSessionData {
+export interface StoredAnalysis {
   signature: string;
   profile: unknown;
+  createdAt?: string;
 }
 
 export interface DashboardSessionData {
   preferences?: DashboardPreferences;
-  analysis?: AnalysisSessionData;
+  analysis?: StoredAnalysis;
+  resumeText?: string;
+  resumeFileName?: string;
 }

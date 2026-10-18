@@ -1,19 +1,23 @@
 import { Hono } from 'hono';
-import { getSession, saveSession, makeSessionCookie, clearSessionCookie, type Env } from '../session';
+import { makeSessionCookie, type Env } from '../session';
+import { persistSession } from '../store';
 import type { SocialLinks, DashboardSessionData } from '../types';
 
-const app = new Hono<{ Bindings: Env; Variables: { session: DashboardSessionData } }>();
+const app = new Hono<{
+  Bindings: Env;
+  Variables: { session: DashboardSessionData; userId: string | null; secure: boolean };
+}>();
 
 const LINK_KEYS = ['github', 'linkedin', 'resume', 'twitter', 'portfolio', 'devto'] as const;
 
-function sanitizeTheme(input: unknown): 'light' | 'dark' | undefined {
+export function sanitizeTheme(input: unknown): 'light' | 'dark' | undefined {
   if (input === 'light' || input === 'dark') {
     return input;
   }
   return undefined;
 }
 
-function sanitizeLinkValue(input: string): string | undefined {
+export function sanitizeLinkValue(input: string): string | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
   try {
@@ -26,7 +30,7 @@ function sanitizeLinkValue(input: string): string | undefined {
   }
 }
 
-function sanitizeLinks(input: unknown): Partial<SocialLinks> {
+export function sanitizeLinks(input: unknown): Partial<SocialLinks> {
   if (!input || typeof input !== 'object') return {};
   const normalizedLinks: Partial<SocialLinks> = {};
   for (const key of LINK_KEYS) {
@@ -40,10 +44,13 @@ function sanitizeLinks(input: unknown): Partial<SocialLinks> {
 }
 
 app.get('/', async (c) => {
-  const session = c.get('session') as Awaited<ReturnType<typeof getSession>>;
+  const session = c.get('session');
   return c.json({
     theme: session.preferences?.theme,
     links: session.preferences?.links ?? {},
+    resumeFileName: session.resumeFileName ?? null,
+    resumeChars: session.resumeText?.length ?? 0,
+    hasAnalysis: Boolean(session.analysis),
   });
 });
 
@@ -66,23 +73,33 @@ app.post('/', async (c) => {
     return c.json({ error: 'No valid preference values provided in payload.' }, 400);
   }
 
-  const session = c.get('session') as Awaited<ReturnType<typeof getSession>>;
+  const session = c.get('session');
   const previousPreferences = session.preferences ?? {};
+
+  const nextLinks = hasLinks ? { ...previousPreferences.links, ...links } : previousPreferences.links;
 
   session.preferences = {
     ...previousPreferences,
     ...(hasTheme ? { theme } : {}),
-    ...(hasLinks ? { links: { ...previousPreferences.links, ...links } } : {}),
+    ...(hasLinks ? { links: nextLinks } : {}),
   };
 
-  const encrypted = await saveSession(c.env, session);
+  // Changing links invalidates any stored analysis (signature mismatch).
+  const hadAnalysis = Boolean(session.analysis);
+  if (hasLinks && session.analysis) {
+    delete session.analysis;
+  }
 
-  return c.json({
-    ok: true,
-    preferences: session.preferences,
-  }, {
-    headers: { 'Set-Cookie': makeSessionCookie(encrypted) },
-  });
+  const { cookieValue } = await persistSession(c.env, session, c.get('userId'));
+
+  return c.json(
+    {
+      ok: true,
+      preferences: session.preferences,
+      analysisCleared: hasLinks && hadAnalysis,
+    },
+    { headers: { 'Set-Cookie': makeSessionCookie(cookieValue, c.get('secure')) } },
+  );
 });
 
 export default app;

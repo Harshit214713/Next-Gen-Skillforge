@@ -18,13 +18,18 @@ The app deploys as a single Cloudflare Worker:
 | Component | Platform | Purpose |
 |-----------|----------|---------|
 | **App** | Cloudflare Workers | Hono API on `/api/*` + Next.js static export served from `out/` via Workers Assets |
+| **Sessions** | Workers KV + D1 | Encrypted cookie sessions in KV, mirrored to D1 for durable storage |
 
-The frontend calls the API on the same origin using relative paths (`/api/...`), so no CORS setup or `NEXT_PUBLIC_API_URL` is needed. Session data is stored in Workers KV with encrypted cookies.
+The frontend calls the API on the same origin using relative paths (`/api/...`), so no CORS setup or `NEXT_PUBLIC_API_URL` is needed. Session data is stored in Workers KV (primary) and mirrored to Cloudflare D1 (durable fallback); the cookie holds an encrypted session id.
 
 ## Core Functionality
 
 - Link-based profile analysis (GitHub, LinkedIn, portfolio, resume URL, Twitter, Dev.to).
 - Resume upload and parsing (`.txt`; `.pdf`/`.docx` parsing unavailable on Workers).
+- `POST /api/analyze` runs the full analysis pipeline:
+  - Scrapes GitHub (REST API), Dev.to (API), and generic links (HTML meta extraction).
+  - Deterministic heuristic engine (skill keyword dictionaries) always works with zero configuration.
+  - Optional AI enrichment when an API key is configured (OpenAI, Azure OpenAI, Anthropic, or Hugging Face).
 - AI-generated outputs:
   - Technical and soft skill scoring.
   - Summary, strengths, and growth gaps.
@@ -33,7 +38,7 @@ The frontend calls the API on the same origin using relative paths (`/api/...`),
   - Job recommendations with match percentage and fit reason.
   - Prioritized learning path with resource links.
 - Downloadable PDF report from analyzed profile data.
-- Session-backed persistence for preferences and last valid analysis.
+- Session-backed persistence for preferences, resume text, and last valid analysis.
 
 ## Tech Stack
 
@@ -64,21 +69,29 @@ next-gen-skillforge/
 │   └── ui/              # UI kit (buttons, cards, toasts, skeletons, ...)
 ├── lib/                 # Shared libraries
 │   ├── api-client.ts    # Fetch-based API client (same-origin /api calls)
-│   ├── ai.ts            # AI provider adapters (OpenAI, Anthropic, etc.)
-│   ├── profileDefaults.ts
 │   ├── types.ts
 │   └── utils.ts
 ├── src/                 # Cloudflare Worker backend
 │   ├── index.ts         # Worker entry: routes /api/* to Hono, everything else to static assets
-│   ├── session.ts       # KV-backed encrypted cookie sessions
+│   ├── session.ts       # Encrypted cookie sessions + Env types
+│   ├── store.ts         # Session persistence (KV primary, D1 mirror)
+│   ├── validate.ts      # Shared profile/analysis validators
+│   ├── ai.ts            # AI provider adapters (OpenAI, Anthropic, Hugging Face)
 │   ├── types.ts         # Worker types
+│   ├── engine/          # Analysis engine
+│   │   ├── index.ts     # Orchestrator (sources -> skills -> optional AI -> profile)
+│   │   ├── scrape.ts    # GitHub/Dev.to/generic link scraping
+│   │   ├── skills.ts    # Skill keyword dictionaries + detection
+│   │   └── build.ts     # Deterministic profile/summary/jobs/learning builder
 │   └── routes/          # API route handlers
+│       ├── analyze.ts   # POST /api/analyze (full pipeline)
 │       ├── preferences.ts
 │       ├── analysis.ts
 │       ├── resume.ts
 │       └── report.ts
 ├── public/              # Static assets
-├── wrangler.toml        # Worker configuration (API + assets + KV binding)
+├── schema.sql           # D1 schema (users table)
+├── wrangler.toml        # Worker configuration (API + assets + KV + D1 bindings)
 ├── next.config.mjs      # Next.js config (static export)
 ├── vitest.config.ts     # Test configuration
 └── package.json
@@ -105,9 +118,19 @@ npx wrangler login
 npx wrangler kv:namespace create "SESSION_KV"
 # Add the returned ID to wrangler.toml under [[kv_namespaces]] id
 
+# Create the D1 database (one-time) and apply the schema
+npx wrangler d1 create NEXT_GEN_SKILLFORGE_DB
+# Add the returned database_id to wrangler.toml under [[d1_databases]]
+npx wrangler d1 execute NEXT_GEN_SKILLFORGE_DB --file=./schema.sql
+npx wrangler d1 execute NEXT_GEN_SKILLFORGE_DB --local --file=./schema.sql
+
 # Set the session secret (one-time)
 npx wrangler secret put SESSION_SECRET
 # Value must be at least 32 characters
+
+# Optional: enable AI enrichment (any one provider)
+# Copy .dev.vars.example to .dev.vars for local development, or use
+# `npx wrangler secret put OPENAI_API_KEY` (etc.) in production.
 
 # Full local app: build the frontend, then serve UI + API together (port 8787)
 npm run build
@@ -175,7 +198,7 @@ npm run test          # Run all tests once
 npm run test:watch    # Watch mode
 ```
 
-Tests cover session encryption/cookie handling, link/sanitization validation, analysis payload validation, PDF report utilities, and the API client.
+Tests cover session encryption/cookie handling, link/sanitization validation, analysis payload validation, the analysis engine (skill detection, scraping utilities, deterministic profile builder), PDF report utilities, and the API client.
 
 ## Contributing
 

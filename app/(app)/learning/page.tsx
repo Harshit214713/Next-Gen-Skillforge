@@ -39,6 +39,11 @@ const PRIORITY_STYLES: Record<string, { label: string; className: string }> = {
   },
 };
 
+const PRIORITY_FALLBACK = {
+  label: 'Priority',
+  className: 'text-muted-foreground bg-secondary border-border',
+};
+
 export default function LearningPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -163,7 +168,7 @@ export default function LearningPage() {
 
       <div className="space-y-4">
         {path.map((item) => {
-          const config = PRIORITY_STYLES[item.priority];
+          const config = PRIORITY_STYLES[item.priority] ?? PRIORITY_FALLBACK;
           return (
             <Card key={item.id} className="group">
               <CardContent className="p-5">

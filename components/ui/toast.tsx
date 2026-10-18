@@ -14,6 +14,7 @@ type ToastProps = {
   description?: string;
   action?: ToastAction;
   variant?: 'default' | 'destructive' | 'success';
+  duration?: number;
 };
 
 type ToastState = {
@@ -56,13 +57,13 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, duration = TOAST_REMOVE_DELAY) => {
   if (toastTimeouts.has(toastId)) return;
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
     dispatch({ type: 'REMOVE_TOAST', toastId });
-  }, TOAST_REMOVE_DELAY);
+  }, duration);
 
   toastTimeouts.set(toastId, timeout);
 };
@@ -70,6 +71,7 @@ const addToRemoveQueue = (toastId: string) => {
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':
+      addToRemoveQueue(action.toast.id, action.toast.duration);
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
@@ -84,9 +86,10 @@ const reducer = (state: State, action: Action): State => {
     case 'DISMISS_TOAST': {
       const { toastId } = action;
       if (toastId) {
-        addToRemoveQueue(toastId);
+        const target = state.toasts.find((t) => t.id === toastId);
+        addToRemoveQueue(toastId, target?.duration);
       } else {
-        state.toasts.forEach((t) => addToRemoveQueue(t.id));
+        state.toasts.forEach((t) => addToRemoveQueue(t.id, t.duration));
       }
       return {
         ...state,
@@ -211,7 +214,7 @@ function ToastComponent({
   return (
     <div
       className={cn(
-        'relative flex items-start gap-4 rounded-lg border p-4 shadow-lg w-full max-w-sm animate-in fade-in slide-in-from-right-2 duration-300',
+        'relative flex items-start gap-4 rounded-lg border p-4 shadow-lg w-full max-w-sm animate-toast-in',
         variantConfig[variant],
         className,
       )}
@@ -219,7 +222,7 @@ function ToastComponent({
     >
       <div className="shrink-0">
         {variant === 'success' ? (
-          <div className="flex h-3 w-3 items-center justify-center rounded-full bg-success text-success-foreground">
+          <div className="flex h-3 w-3 items-center justify-center rounded-full bg-accent-foreground text-accent">
             <svg className="h-2 w-2" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
             </svg>

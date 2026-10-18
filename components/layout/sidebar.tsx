@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Menu, Sun, Moon, LayoutDashboard, User, Activity, BookOpen, FileText, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -100,10 +101,13 @@ export function Sidebar() {
               href="/"
               className="flex items-center gap-3 rounded-lg p-2 hover:bg-secondary transition-colors"
             >
-              <img
-                src="/next-gen-skillforge-logo.svg"
+              <Image
+                src="/favicon.png"
                 alt="Skillforge"
+                width={32}
+                height={32}
                 className="h-8 w-8 rounded-full"
+                priority
               />
               <div>
                 <p className="text-sm font-medium text-foreground">Back to Home</p>

@@ -9,8 +9,11 @@ export const metadata: Metadata = {
   title: 'Next-Gen Skillforge',
   description: 'AI-driven career profile analysis, skill graphs, job recommendations, and learning roadmaps.',
   icons: {
-    icon: '/next-gen-skillforge-logo.svg',
-    shortcut: '/next-gen-skillforge-logo.svg',
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    shortcut: '/favicon.ico',
   },
   openGraph: {
     title: 'Next-Gen Skillforge',

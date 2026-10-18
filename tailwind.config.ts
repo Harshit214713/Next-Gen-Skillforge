@@ -67,6 +67,7 @@ const config: Config = {
         'fade-in': 'fade-in 0.4s ease-out forwards',
         'slide-up': 'slide-up 0.5s ease-out forwards',
         'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
+        'toast-in': 'toast-in 0.3s ease-out forwards',
       },
       keyframes: {
         'fade-in': {
@@ -80,6 +81,10 @@ const config: Config = {
         'pulse-soft': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.7' },
+        },
+        'toast-in': {
+          '0%': { opacity: '0', transform: 'translateX(1rem)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
     },
