@@ -1,0 +1,10 @@
+# Default reviewers for all changes.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+* @divyanshakya966
+
+# Backend/session security changes always get a second look from the owner.
+/src/ @divyanshakya966
+/lib/session.ts @divyanshakya966
+
+# CI and security workflows.
+/.github/ @divyanshakya966

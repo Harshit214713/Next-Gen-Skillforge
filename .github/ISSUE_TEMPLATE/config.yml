@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussion (Discord)
+    url: https://discord.gg/bZ47fac2jn
+    about: Ask usage questions or discuss ideas with the community before opening an issue.
+  - name: Security vulnerability
+    url: https://github.com/divyanshakya966/Next-Gen-Skillforge/security/advisories/new
+    about: Report security issues privately — never in a public issue.
+  - name: Nexus Spring of Code (NSoC)
+    url: https://www.nsoc.in/
+    about: Learn about the program, tracks, and contribution periods.

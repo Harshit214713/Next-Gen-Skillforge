@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a problem so we can fix it
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+        **Security issues?** Do not open a public issue — follow [SECURITY.md](https://github.com/divyanshakya966/Next-Gen-Skillforge/blob/main/SECURITY.md).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did you find the bug?
+      options:
+        - Frontend (landing/dashboard pages)
+        - API / Worker endpoints
+        - Analysis or report generation
+        - Local development setup
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what went wrong.
+      placeholder: "The report page fails to download when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that reliably trigger the problem.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/OS and app version if known.
+      placeholder: |
+        - OS: [e.g. Ubuntu 24.04, macOS 15]
+        - Browser: [e.g. Chrome 130]
+        - Deployed or local: [workers.dev URL / localhost:8787]
+      render: markdown
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, console errors, or logs (redact secrets first!).
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues for duplicates
+          required: true
+        - label: This is not a security vulnerability (those go through SECURITY.md)
+          required: true

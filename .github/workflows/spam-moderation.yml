@@ -1,0 +1,97 @@
+name: Spam Moderation
+
+# Flags and closes high-confidence spam on new issues/PRs.
+# Deliberately conservative: NSoC contributors are new accounts, so account age
+# alone never triggers action — there must ALSO be spam signals.
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  moderate:
+    name: Screen for spam
+    runs-on: ubuntu-latest
+    steps:
+      - name: Screen issue or PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isIssue = !!context.payload.issue;
+            const item = isIssue ? context.payload.issue : context.payload.pull_request;
+            const author = item.user.login;
+            const title = (item.title || '').toLowerCase();
+            const body = (item.body || '').toLowerCase();
+            const text = `${title}\n${body}`;
+
+            // Bypass: maintainers, bots (Dependabot), and users with prior repo participation
+            if (['OWNER', 'MEMBER', 'COLLABORATOR'].includes(item.author_association)) {
+              core.info(`Trusted author @${author} — skipping.`);
+              return;
+            }
+            if (item.user.type === 'Bot') return;
+
+            // Account age check (spam bots are usually hours/days old; NSoC signups are older)
+            const createdAt = new Date(item.user.created_at);
+            const accountAgeDays = (Date.now() - createdAt.getTime()) / 86400000;
+
+            // Spam signal definitions
+            const spamPatterns = [
+              /cheap\s+(seo|backlinks?|followers?|views?)/i,
+              /(casino|viagra|cialis|payday\s+loans?|pay\s*day\s+loans?)/i,
+              /(make\s+\$?\d{3,}\s*(a|per)\s*day|earn\s+\$?\d{3,}\s*daily)/i,
+              /(crypto\s+(giveaway|airdrop)|bitcoin\s+giveaway)/i,
+              /buy\s+(followers|subscribers|likes|accounts)/i,
+              /content\s+writing\s+services\s+at\s+cheap/i,
+              /(seo\s+expert|link\s+building\s+service)\s+(needed|offer)/i,
+              /https?:\/\/\S+\s+https?:\/\/\S+\s+https?:\/\/\S+/, // 3+ links = link spam
+            ];
+            const spamHits = spamPatterns.filter(re => re.test(text)).length;
+
+            // Template-abandonment signal: almost no real content
+            const stripped = body
+              .replace(/<!--[\s\S]*?-->/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            const isHollow = stripped.length < 40;
+
+            const isYoungAccount = accountAgeDays < 7;
+            const shouldFlag = spamHits >= 1 || (isYoungAccount && isHollow);
+
+            if (!shouldFlag) {
+              core.info(`No spam signals from @${author} (age ${accountAgeDays.toFixed(1)}d).`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const number = item.number;
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: number, labels: ['spam'],
+            });
+
+            if (spamHits >= 1) {
+              // High confidence: spam content itself → close immediately
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: number,
+                body: `Automated spam screen: this ${isIssue ? 'issue' : 'pull request'} matched spam patterns and was closed. If this is a mistake, contact the maintainers (see SECURITY.md / CONTRIBUTING.md) and we will reopen it.`,
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: number, state: 'closed',
+                state_reason: 'not_planned',
+              });
+              core.notice(`Closed spam ${isIssue ? 'issue' : 'PR'} #${number} from @${author}.`);
+            } else {
+              // Low confidence (young + hollow only): flag for human review, keep open
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: number,
+                body: `@${author} welcome! This ${isIssue ? 'issue' : 'pull request'} was auto-flagged for review because the account is new and the description is very short. Please fill in the ${isIssue ? 'issue': 'pull request'} template fully (what, why, steps/plan) — maintainers will review shortly. First time here? See [CONTRIBUTING.md](https://github.com/divyanshakya966/Next-Gen-Skillforge/blob/main/CONTRIBUTING.md).`,
+              });
+              core.notice(`Flagged for review: ${isIssue ? 'issue' : 'PR'} #${number} from new account @${author}.`);
+            }

@@ -1,0 +1,112 @@
+name: PR Guard
+
+# Validates structural quality of every PR: meaningful title, linked issue,
+# real description, size limits, and protection for CI/workflow files.
+# This is the primary automated defense against low-effort and bulk AI-generated PRs.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    name: PR structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const assoc = pr.author_association;
+            const isMaintainer = ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(assoc);
+            const isBot = pr.user.type === 'Bot';
+            const body = pr.body || '';
+            const errors = [];
+            const notes = [];
+
+            // 1. Title must follow Conventional Commits (skip bots, e.g. Dependabot)
+            if (!isBot) {
+              const titleRe = /^(feat|fix|docs|test|chore|refactor|style|perf|build|ci|revert)(\([a-z0-9\-/, ]+\))?!?: \S.+$/i;
+              if (!titleRe.test(pr.title.trim())) {
+                errors.push(`**Title** must follow Conventional Commits, e.g. \`fix: correct report page ternary\` (got: "${pr.title}")`);
+              }
+            }
+
+            // 2. Linked issue is required (skip bots)
+            if (!isBot && !/\b(closes|fixes|resolves)\s+#\d+/i.test(body)) {
+              errors.push('**Linked issue** missing — add a line like `Closes #123`. Discuss the change in an issue before opening a PR.');
+            }
+
+            // 3. Description must be substantive (template headings/checkboxes/comments stripped)
+            if (!isBot) {
+              const cleaned = body
+                .replace(/<!--[\s\S]*?-->/g, ' ')
+                .replace(/^#{1,6} .*$/gm, ' ')
+                .replace(/^\s*[-*] \[[ xX]\].*$/gm, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              const words = cleaned.split(' ').filter(Boolean);
+              if (words.length < 40) {
+                errors.push(`**Description too thin** (~${words.length} words, need ≥ 40). Fill in what changed, why, and the test plan — template placeholders do not count.`);
+              }
+            }
+
+            // Fetch changed files for the remaining checks (bots get file checks too)
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            // 4. Workflow files: only maintainers may change them (prevents CI poisoning)
+            const workflowFiles = files
+              .map(f => f.filename)
+              .filter(fn => fn.startsWith('.github/workflows/') || fn === '.github/dependabot.yml');
+            if (workflowFiles.length > 0 && !isMaintainer) {
+              errors.push(`**Workflow changes require maintainer status.** External contributors: propose CI changes in an issue first (${workflowFiles.join(', ')}).`);
+            }
+
+            // 5. Secret files must never be committed (allow the .example templates)
+            const secretFiles = files
+              .map(f => f.filename)
+              .filter(fn => {
+                const base = fn.split('/').pop();
+                if (base === '.env.example' || base === '.dev.vars.example') return false;
+                return /^\.env(\..+)?$/.test(base)
+                  || /^\.dev\.vars(\..+)?$/.test(base)
+                  || /^(id_(rsa|ed25519|ecdsa)|.*\.(pem|key|p12|pfx|keystore))$/.test(base);
+              });
+            if (secretFiles.length > 0) {
+              errors.push(`**Secret-looking files must not be committed:** ${secretFiles.join(', ')}. Remove them from the PR (see SECURITY.md).`);
+            }
+
+            // 6. Size guard: very large diffs need an explicit justification marker
+            const changedLines = files.reduce((n, f) => n + f.additions + f.deletions, 0);
+            if (changedLines > 4000 && !body.includes('large-pr-ok')) {
+              errors.push(`**PR too large** (${changedLines.toLocaleString()} changed lines; limit 4,000). Split it into smaller PRs, or add \`large-pr-ok\` to the description with a justification if it is a justified rewrite.`);
+            }
+            if (changedLines > 4000) notes.push(`Large PR: ${changedLines.toLocaleString()} changed lines — extra maintainer scrutiny applies.`);
+            if (!isMaintainer && !isBot) notes.push('First-time/outside contribution — a maintainer must approve before merge.');
+
+            // Report
+            if (errors.length > 0) {
+              const summary = [
+                '### PR Guard failed',
+                '',
+                ...errors.map(e => `- ${e}`),
+                '',
+                'Fix the PR (edit the title or description, push fixes) — the checks re-run automatically.',
+                'See [CONTRIBUTING.md](https://github.com/divyanshakya966/Next-Gen-Skillforge/blob/main/CONTRIBUTING.md) for the expectations.',
+              ].join('\n');
+              core.summary.addRaw(summary).write();
+              core.setFailed(`${errors.length} problem(s): ${errors.join(' | ')}`);
+            } else {
+              core.summary.addRaw(['### PR Guard passed', '', ...notes.map(n => `- ${n}`)].join('\n')).write();
+              core.info('PR Guard passed.');
+            }

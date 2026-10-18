@@ -1,0 +1,17 @@
+# Copy this file to `.dev.vars` for local Worker development (`wrangler dev`).
+# NEVER commit `.dev.vars` — it is gitignored and must stay that way.
+# Production secrets go in Worker secrets: `npx wrangler secret put <NAME>`
+
+# Required: session encryption (>= 32 characters, generate with: openssl rand -hex 32)
+SESSION_SECRET=
+
+# Optional: AI provider (configure at least one)
+OPENAI_API_KEY=
+OPENAI_MODEL=
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=
+HF_API_TOKEN=
+HF_MODEL=
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_DEPLOYMENT=

@@ -140,6 +140,17 @@ GitHub Actions runs on every push and PR to `main`:
 1. **Lint** — ESLint
 2. **Type Check** — `tsc --noEmit`
 3. **Tests** — Vitest unit tests
+4. **Build** — Next.js static export (`out/`)
+
+Additional automation on PRs and issues:
+
+- **PR Guard** — validates every PR: Conventional Commit title, linked issue, real description, no secret files, maintainer-only workflow changes, size limit
+- **Spam Moderation** — auto-closes spam issues/PRs; flags new/empty accounts for human review
+- **Stale** — marks inactive items after 21 days, closes 7 days later (program labels exempt)
+- **CodeQL** — static security analysis (JavaScript/TypeScript)
+- **Dependency Review** — blocks PRs introducing vulnerable dependencies (high severity+)
+- **Labeler** — applies `area/*` labels based on changed paths
+- **Dependabot** — weekly npm and GitHub Actions update PRs
 
 Deployment is done manually with `npm run deploy` (requires `wrangler login`).
 
@@ -168,9 +179,14 @@ Tests cover session encryption/cookie handling, link/sanitization validation, an
 
 ## Contributing
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+We welcome contributions, including from **[Nexus Spring of Code (NSoC)](https://www.nsoc.in/)** participants!
 
-All PRs must pass the CI checks (lint, typecheck, tests) before merging to `main`.
+- New contributors: start with the [Contributing Guide](CONTRIBUTING.md) — setup, branch/commit conventions, rebase workflow, and what reviewers expect.
+- Found a bug or have an idea? [Open an issue](https://github.com/divyanshakya966/Next-Gen-Skillforge/issues/new/choose) using the templates.
+- **Security issues:** report privately via [SECURITY.md](SECURITY.md) — never a public issue.
+- Maintainers/reviewers: see the [Maintainer Guide](MAINTAINERS.md) for triage, review checklists, and conflict handling.
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating. All PRs must pass the CI checks (lint, typecheck, tests, build, PR structure) before merging to `main`.
 
 Good starting points are issues labeled `good first issue` and `help wanted`.
 

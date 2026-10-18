@@ -1,0 +1,50 @@
+# Auto-applied PR labels based on changed paths (actions/labeler v5 schema).
+# Run scripts/setup-labels.sh once so these labels exist.
+
+'area/frontend':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/**'
+          - 'components/**'
+          - 'public/**'
+          - 'tailwind.config.ts'
+          - 'next.config.mjs'
+          - 'postcss.config.mjs'
+
+'area/worker':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**'
+          - 'wrangler.toml'
+          - '.wranglerignore'
+
+'area/shared':
+  - changed-files:
+      - any-glob-to-any-file: 'lib/**'
+
+'area/tests':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '__tests__/**'
+          - 'vitest.config.ts'
+
+'area/docs':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.md'
+          - '.github/ISSUE_TEMPLATE/**'
+
+'area/ci':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/dependabot.yml'
+          - '.github/labeler.yml'
+          - 'package.json'
+          - 'package-lock.json'
+
+'dependencies':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'

@@ -1,0 +1,49 @@
+name: Stale
+
+# Marks inactive issues/PRs after 21 days, closes them 7 days later.
+# Program-critical labels are exempt so NSoC work is never auto-closed.
+
+on:
+  schedule:
+    - cron: '40 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Sweep inactive items
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark and close stale items
+        uses: actions/stale@v9
+        with:
+          repo-message: >
+            This item has been marked stale due to inactivity.
+            It will be closed in 7 days if there is no further activity.
+            Comment or push to keep it open.
+          stale-issue-message: >
+            This issue has been marked stale (21 days of inactivity).
+            A maintainer will close it in 7 days unless there is new activity.
+            NSoC contributors: comment if you are still working on it.
+          close-issue-message: >
+            Closing due to inactivity. Feel free to reopen or open a new issue
+            if this is still relevant.
+          stale-pr-message: >
+            This pull request has been marked stale (21 days of inactivity).
+            It will be closed in 7 days unless there is new activity.
+            Update the branch or comment if you are still working on it.
+          close-pr-message: >
+            Closing due to inactivity. Reopen the PR or open a fresh one
+            if you would like to continue this work.
+          days-before-stale: 21
+          days-before-close: 7
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          exempt-issue-labels: 'good first issue,help wanted,NSOC''26 (WINTER EDITION),blocked,security'
+          exempt-pr-labels: 'dependencies,blocked,NSOC''26 (WINTER EDITION)'
+          exempt-all-milestones: true
+          operations-per-run: 60
+          remove-stale-when-updated: true
