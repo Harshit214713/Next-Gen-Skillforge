@@ -1,0 +1,6 @@
+.next/cache/
+node_modules/
+.git/
+.github/
+.vercel/
+.next/static/chunks/*.js.map
