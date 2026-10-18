@@ -6,4 +6,4 @@ enabled = true
 
 [pages]
 build_command = "npm run build:cf"
-build_output_directory = ".next"
+pages_build_output_dir = ".next"
