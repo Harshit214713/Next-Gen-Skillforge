@@ -24,8 +24,8 @@ export function Button({
   const variants = {
     primary: 'bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm shadow-primary/20',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    outline: 'border border-input bg-background hover:bg-secondary hover:text-accent-foreground',
-    ghost: 'hover:bg-secondary hover:text-accent-foreground',
+    outline: 'border border-input bg-background hover:bg-secondary',
+    ghost: 'hover:bg-secondary',
     destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   };
 

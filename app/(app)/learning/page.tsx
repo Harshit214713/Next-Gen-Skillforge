@@ -31,7 +31,7 @@ const PRIORITY_STYLES: Record<string, { label: string; className: string }> = {
   },
   medium: {
     label: 'Medium',
-    className: 'text-amber-700 bg-amber-50 border-amber-100',
+    className: 'text-amber-700 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-900/40',
   },
   low: {
     label: 'Low Priority',
@@ -195,7 +195,7 @@ export default function LearningPage() {
                       href={resource.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-2 rounded-lg border border-background bg-background/50 px-3 py-2 text-sm transition-colors hover:border-primary/50 hover:bg-primary/5"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background/50 px-3 py-2 text-sm transition-colors hover:border-primary/50 hover:bg-primary/5"
                     >
                       <span className="flex items-center gap-1.5 truncate min-w-0">
                         {RESOURCE_ICONS[resource.type] || <FileText className="h-3.5 w-3.5" />}
@@ -214,13 +214,13 @@ export default function LearningPage() {
         })}
       </div>
 
-      <div className="mt-8 rounded-xl border border-background bg-card p-6 text-center">
+      <div className="mt-8 rounded-xl border border-border bg-card p-6 text-center">
         <p className="text-sm text-muted-foreground mb-4">
           All resources are curated based on your skill gaps and industry demand.
         </p>
         <Link
           href="/analysis"
-          className="inline-flex h-10 items-center rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+          className="inline-flex h-10 items-center rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
         >
           Back to Analysis
         </Link>

@@ -16,15 +16,18 @@ export function Skeleton({
   width,
   variant = 'rectangular',
 }: SkeletonProps) {
+  const style: React.CSSProperties = {};
+  if (height !== undefined) style.height = typeof height === 'number' ? `${height}px` : height;
+  if (width !== undefined) style.width = typeof width === 'number' ? `${width}px` : width;
+
   return (
     <div
       className={cn(
         'animate-pulse rounded-md bg-muted',
         variant === 'circular' && 'rounded-full',
-        height && `h-[${typeof height === 'number' ? height + 'px' : height}]`,
-        width && `w-[${typeof width === 'number' ? width + 'px' : width}]`,
         className,
       )}
+      style={style}
     />
   );
 }

@@ -7,16 +7,13 @@ import { apiGet } from '@/lib/api-client';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { ProgressWithLabel } from '@/components/ui/progress';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import {
   FileText,
   Download,
-  AlertCircle,
   CheckCircle,
   RefreshCw,
-  Briefcase,
 } from 'lucide-react';
 
 export default function ReportPage() {
@@ -184,14 +181,11 @@ export default function ReportPage() {
             )}
           </div>
 
-          <div className="mt-8 flex items-center justify-between border-t border-background pt-6">
+          <div className="mt-8 border-t border-border pt-6">
             <div>
               <p className="text-xs text-muted-foreground">Report format</p>
               <p className="text-sm font-medium text-foreground">PDF</p>
             </div>
-            <Badge variant="secondary" className="text-xs px-2 py-1">
-              {profile.jobRecommendations.length + profile.learningPath.length + 2} pages
-            </Badge>
           </div>
         </CardContent>
       </Card>

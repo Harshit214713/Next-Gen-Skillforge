@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/toast';
-import { Sidebar } from '@/components/layout/sidebar';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -35,6 +34,7 @@ export default function RootLayout({
                 const savedTheme = localStorage.getItem('theme-mode');
                 const theme = (savedTheme === 'dark' || savedTheme === 'light') ? savedTheme : 'light';
                 document.documentElement.dataset.theme = theme;
+                document.documentElement.classList.toggle('dark', theme === 'dark');
               } catch (e) {
                 document.documentElement.dataset.theme = 'light';
               }
@@ -44,10 +44,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased min-h-screen bg-background text-foreground`}>
         <ToastProvider />
-        <Sidebar />
-        <div className="md:pl-64 min-h-screen">
-          {children}
-        </div>
+        {children}
       </body>
     </html>
   );

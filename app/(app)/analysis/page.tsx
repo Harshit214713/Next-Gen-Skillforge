@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import {
   apiGet,
-  apiPost,
   apiDelete,
 } from '@/lib/api-client';
 import type { UserProfile, JobRecommendation, SkillData, LearningPathItem } from '@/lib/types';
@@ -12,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressWithLabel } from '@/components/ui/progress';
-import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
+import { SkeletonCard } from '@/components/ui/skeleton';
 import {
   Sparkles,
   TrendingUp,
@@ -20,7 +19,9 @@ import {
   AlertCircle,
   ExternalLink,
   RefreshCw,
-  Play,
+  Activity,
+  BarChart3,
+  Briefcase,
   BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -181,7 +182,7 @@ export default function AnalysisPage() {
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
         <Card>
           <CardContent className="p-12 text-center">
-            <Play className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-bold text-lg mb-2">No analysis yet</h3>
             <p className="text-sm text-muted-foreground mb-6">
               Set up your profile first, then run AI analysis to see your skill graphs,
@@ -215,7 +216,7 @@ export default function AnalysisPage() {
             size="sm"
             className="flex items-center gap-2"
           >
-            <RefreshCw className={refreshing ? 'animate-spin' : ''} h-4 w-4 />
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button
@@ -246,7 +247,7 @@ export default function AnalysisPage() {
                 <p className="text-3xl font-bold">{profile.aiSummary.industryRelevanceScore}%</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                <Sparkles className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -272,7 +273,7 @@ export default function AnalysisPage() {
                 <p className="text-3xl font-bold">{technicalSkills.length}</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-secondary-foreground">
-                <Play className="h-5 w-5" />
+                <BarChart3 className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -285,7 +286,7 @@ export default function AnalysisPage() {
                 <p className="text-3xl font-bold">{jobs.length}</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-                <BriefcaseIcon className="h-5 w-5" />
+                <Briefcase className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -306,7 +307,7 @@ export default function AnalysisPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-accent-foreground" />
+                  <TrendingUp className="h-4 w-4 text-accent" />
                   <h4 className="font-medium">Strengths</h4>
                 </div>
                 <ul className="space-y-2">
@@ -324,14 +325,14 @@ export default function AnalysisPage() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4 text-amber-600" />
+                  <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <h4 className="font-medium">Growth Gaps</h4>
                 </div>
                 <ul className="space-y-2">
                   {profile.aiSummary.gaps.length > 0 ? (
                     profile.aiSummary.gaps.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2">
-                        <span className="shrink-0 h-1 w-1 rounded-full bg-amber-600 mt-1.5"></span>
+                      <li key={i} className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2">
+                        <span className="shrink-0 h-1 w-1 rounded-full bg-amber-600 dark:bg-amber-400 mt-1.5"></span>
                         <p className="text-sm text-foreground">{item}</p>
                       </li>
                     ))
@@ -359,7 +360,7 @@ export default function AnalysisPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-6">
-              <Play className="h-5 w-5 text-primary" />
+              <BarChart3 className="h-5 w-5 text-primary" />
               <h2 className="font-heading font-bold text-lg">Skill Scores</h2>
             </div>
             <div className="space-y-6">
@@ -474,7 +475,7 @@ export default function AnalysisPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
-                <BriefcaseIcon className="h-5 w-5 text-primary" />
+                <Briefcase className="h-5 w-5 text-primary" />
                 <h2 className="font-heading font-bold text-lg">Job Recommendations</h2>
               </div>
               {jobs.length === 0 ? (
@@ -482,7 +483,7 @@ export default function AnalysisPage() {
               ) : (
                 <div className="space-y-4">
                   {jobs.map((job) => (
-                    <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg border border-background hover:border-primary/50 transition-colors group">
+                    <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors group">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-heading font-bold text-sm group-hover:text-primary transition-colors">
@@ -500,7 +501,7 @@ export default function AnalysisPage() {
                         </p>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {job.skills.slice(0, 4).map((skill) => (
-                            <span key={skill} className="rounded-md border border-background bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                            <span key={skill} className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
                               {skill}
                             </span>
                           ))}
@@ -534,7 +535,7 @@ export default function AnalysisPage() {
               ) : (
                 <div className="space-y-3">
                   {learningPath.slice(0, 5).map((item) => (
-                    <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-background hover:border-primary/50 transition-colors group">
+                    <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors group">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h4 className="font-heading font-bold text-sm group-hover:text-primary transition-colors">
@@ -546,8 +547,8 @@ export default function AnalysisPage() {
                               item.priority === 'high'
                                 ? 'text-destructive bg-destructive/10'
                                 : item.priority === 'medium'
-                                ? 'text-amber-700 bg-amber-50'
-                                : 'text-accent-foreground bg-accent/10'
+                                ? 'text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20'
+                                : 'text-accent bg-accent/10'
                             }`}
                           >
                             {item.priority}
@@ -590,18 +591,5 @@ export default function AnalysisPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function BriefcaseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7.414a1 1 0 00-.707.293L4.414 8.236A1 1 0 004 9.414V19a2 2 0 002 2z"></path>
-    </svg>
   );
 }

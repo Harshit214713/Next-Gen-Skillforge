@@ -22,7 +22,7 @@ export function Badge({
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-tighter transition-colors',
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide transition-colors',
         badgeVariants[variant],
         className,
       )}
@@ -31,23 +31,3 @@ export function Badge({
   );
 }
 
-interface StatProps {
-  value: React.ReactNode;
-  label: string;
-  trend?: string;
-  trendPositive?: boolean;
-}
-
-export function Stat({ value, label, trend, trendPositive }: StatProps) {
-  return (
-    <div className="flex flex-col">
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-sm text-muted-foreground">{label}</div>
-      {trend && (
-        <div className={`mt-1 text-xs font-medium ${trendPositive ? 'text-accent-foreground' : 'text-destructive'}`}>
-          {trend}
-        </div>
-      )}
-    </div>
-  );
-}

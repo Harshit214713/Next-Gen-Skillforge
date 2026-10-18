@@ -6,7 +6,7 @@
 [![Issues](https://img.shields.io/github/issues/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hosted on Cloudflare](https://img.shields.io/badge/Hosted%20on-Cloudflare-F38020?logo=cloudflare)](https://cloudflare.com/)
-[![CI](https://img.shields.io/github/actions/status/divyanshakya966/Next-Gen-Skillforge/ci?label=CI)](https://github.com/divyanshakya966/Next-Gen-Skillforge/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/divyanshakya966/Next-Gen-Skillforge/ci.yml?branch=main&label=CI)](https://github.com/divyanshakya966/Next-Gen-Skillforge/actions/workflows/ci.yml)
 
 
 Next-Gen Skillforge is an AI-powered career intelligence dashboard. It analyzes public profile links and resume content, extracts skill signals, generates role-fit insights, and creates a personalized learning roadmap.

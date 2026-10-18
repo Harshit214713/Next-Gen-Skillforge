@@ -34,7 +34,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers by emailing 196189584+divyanshakya966@users.noreply.github.com or contacting **@divyanshakya966** on [GitHub](https://github.com/divyanshakya966) or the [NSoC Discord](https://discord.gg/bZ47fac2jn) (ask for a private channel). All complaints will be reviewed and investigated promptly and fairly. Maintainers are obligated to respect the privacy and security of the reporter of any incident.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers by emailing divyanshakya.dev@gmail.com or contacting **@divyanshakya966** on [GitHub](https://github.com/divyanshakya966) or the [NSoC Discord](https://discord.gg/bZ47fac2jn) (ask for a private channel). All complaints will be reviewed and investigated promptly and fairly. Maintainers are obligated to respect the privacy and security of the reporter of any incident.
 
 ## Attribution
 

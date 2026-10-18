@@ -24,11 +24,13 @@ export function Sidebar() {
     const t = saved === 'dark' || saved === 'light' ? saved : 'light';
     setTheme(t);
     document.documentElement.dataset.theme = t;
+    document.documentElement.classList.toggle('dark', t === 'dark');
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.dataset.theme = theme;
+    document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme-mode', theme);
   }, [theme, mounted]);
 
@@ -53,12 +55,12 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 border-r border-background bg-background transition-transform duration-300 md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-background transition-transform duration-300 md:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="h-16 flex items-center justify-between px-6 border-b border-background">
+          <div className="h-16 flex items-center justify-between px-6 border-b border-border">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +95,7 @@ export function Sidebar() {
             })}
           </nav>
 
-          <div className="p-4 border-t border-background">
+          <div className="p-4 border-t border-border">
             <Link
               href="/"
               className="flex items-center gap-3 rounded-lg p-2 hover:bg-secondary transition-colors"

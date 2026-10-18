@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Zap, CheckCircle, BarChart3, Users, Briefcase, GraduationCap, FileText } from 'lucide-react';
+import { ArrowRight, Zap, CheckCircle, BarChart3, Briefcase, GraduationCap, FileText } from 'lucide-react';
 
 const features = [
   {
@@ -52,17 +52,10 @@ const steps = [
   },
 ];
 
-const stats = [
-  { value: '500k+', label: 'Profiles analyzed' },
-  { value: '10k+', label: 'Job recommendations' },
-  { value: '95%', label: 'Skill match accuracy' },
-  { value: '2 min', label: 'Average analysis time' },
-];
-
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <nav className="sticky top-0 z-40 border-b border-background bg-background/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3 sm:px-8 lg:px-12">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -81,12 +74,6 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="inline-flex h-8 items-center rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
-            >
-              Sign in
-            </Link>
             <Link
               href="/dashboard"
               className="inline-flex h-8 items-center rounded-md bg-primary text-xs font-medium text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary-hover transition-colors px-3"
@@ -122,7 +109,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="#features"
-                className="inline-flex h-12 items-center rounded-md border border-input bg-background px-6 text-base font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+                className="inline-flex h-12 items-center rounded-md border border-input bg-background px-6 text-base font-medium text-foreground hover:bg-secondary transition-colors"
               >
                 See Features
               </Link>
@@ -131,19 +118,6 @@ export default function LandingPage() {
         </div>
 
         <div className="absolute top-0 left-0 w-full h-full -z-10 bg-gradient-to-b from-primary/5 via-background to-background/5" />
-      </section>
-
-      <section className="border-y border-background bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 text-center">
-            {stats.map((stat) => (
-              <div key={stat.label} className="px-6">
-                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">
@@ -161,7 +135,7 @@ export default function LandingPage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-xl border border-background bg-card p-6 hover:border-primary/50 transition-colors group"
+                className="rounded-xl border border-border bg-card p-6 hover:border-primary/50 transition-colors group"
               >
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:bg-primary/20 transition-colors">
                   <feature.icon className="h-5 w-5" />
@@ -207,7 +181,7 @@ export default function LandingPage() {
             Ready to analyze your career?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Join thousands of professionals using Skillforge to plan their next move.
+            Connect your profiles, see where your skills stand, and get a clear plan for what to learn next.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -218,7 +192,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="#features"
-              className="inline-flex h-12 items-center rounded-md border border-input bg-background px-6 text-base font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+              className="inline-flex h-12 items-center rounded-md border border-input bg-background px-6 text-base font-medium text-foreground hover:bg-secondary transition-colors"
             >
               Learn More
             </Link>
@@ -226,7 +200,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-background bg-background py-12 px-4 sm:px-6 lg:px-8 mt-auto">
+      <footer className="border-t border-border bg-background py-12 px-4 sm:px-6 lg:px-8 mt-auto">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,8 +212,14 @@ export default function LandingPage() {
             © {new Date().getFullYear()} Next-Gen Skillforge. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms</Link>
+            <a
+              href="https://github.com/divyanshakya966/Next-Gen-Skillforge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </footer>

@@ -5,14 +5,12 @@ import { useToast } from '@/components/ui/toast';
 import {
   apiGet,
   apiPost,
-  apiDelete,
   apiPostForm,
 } from '@/lib/api-client';
 import type { SocialLinks } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -23,7 +21,6 @@ import {
   BookOpen,
   AlertCircle,
   CheckCircle,
-  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -240,8 +237,8 @@ export default function ProfilePage() {
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="space-y-6">
           <Skeleton className="h-4 w-1/3" />
-          {LINK_FIELDS.map(() => (
-            <Skeleton key={Math.random()} className="h-10 w-full" />
+          {LINK_FIELDS.map((field) => (
+            <Skeleton key={field.key} className="h-10 w-full" />
           ))}
           <Skeleton className="h-10 w-3/4" />
           <Skeleton className="h-10 w-1/2" />
@@ -269,7 +266,7 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSave} className="space-y-8">
         <Card>
-          <CardContent className="pt-0">
+          <CardContent className="p-6">
             <div className="space-y-6">
               <div>
                 <h2 className="font-heading font-bold text-lg mb-2">Profile Links</h2>
@@ -345,7 +342,7 @@ export default function ProfilePage() {
               </div>
 
               {resumeFileName && (
-                <div className="flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent-foreground">
+                <div className="flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
                   <ExternalLink className="h-3.5 w-3.5" />
                   <span>Resume: {resumeFileName}</span>
                 </div>
@@ -373,7 +370,7 @@ export default function ProfilePage() {
         </div>
       </form>
 
-      <div className="mt-8 rounded-xl border border-background bg-card p-6">
+      <div className="mt-8 rounded-xl border border-border bg-card p-6">
         <h2 className="font-heading font-bold text-lg mb-4">Next steps</h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">

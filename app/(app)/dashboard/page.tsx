@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
-import { apiGet, apiPost, apiDelete } from '@/lib/api-client';
-import type { DashboardPreferences, SocialLinks, UserProfile } from '@/lib/types';
+import { apiGet, apiDelete } from '@/lib/api-client';
+import type { SocialLinks, UserProfile } from '@/lib/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -12,7 +12,7 @@ import { SkeletonCard } from '@/components/ui/skeleton';
 import {
   TrendingUp,
   FileText,
-  Briefcase,
+  BarChart3,
   Users,
   RefreshCw,
   AlertCircle,
@@ -36,22 +36,23 @@ const EMPTY_LINKS: SocialLinks = {
 export default function DashboardPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [preferences, setPreferences] = useState<DashboardPreferences>({});
   const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [uiTheme, setUiTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const readTheme = () => {
+      setUiTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+    };
+    readTheme();
+    const observer = new MutationObserver(readTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   const fetchSession = useCallback(async () => {
     try {
-      const [prefResp, analysisResp] = await Promise.all([
-        apiGet('/api/session/preferences'),
-        apiGet('/api/session/analysis'),
-      ]);
-
-      const prefData = prefResp as { theme?: string; links?: Partial<SocialLinks> };
-      if (prefData?.theme === 'light' || prefData?.theme === 'dark') {
-        setPreferences({ theme: prefData.theme, links: prefData.links });
-      }
-
+      const analysisResp = await apiGet('/api/session/analysis');
       const analysis = (analysisResp as {
         analysis?: { profile?: UserProfile } | null;
       })?.analysis;
@@ -211,7 +212,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-secondary-foreground">
-              <Briefcase className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
@@ -252,7 +253,7 @@ export default function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-3">
               <Link
                 href="/profile"
-                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Upload className="h-4 w-4" />
@@ -262,7 +263,7 @@ export default function DashboardPage() {
               </Link>
               <Link
                 href="/analysis"
-                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
@@ -272,7 +273,7 @@ export default function DashboardPage() {
               </Link>
               <Link
                 href="/report"
-                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary hover:text-accent-foreground transition-colors"
+                className="flex items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <Download className="h-4 w-4" />
@@ -292,7 +293,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Theme</span>
               <Badge variant="default" className="text-xs px-2 py-1">
-                {preferences.theme === 'dark' ? 'Dark' : 'Light'}
+                {uiTheme === 'dark' ? 'Dark' : 'Light'}
               </Badge>
             </div>
             {hasAnalysis && (
@@ -369,7 +370,7 @@ export default function DashboardPage() {
       )}
 
       {!hasAnalysis && (
-        <div className="rounded-xl border border-dashed border-background bg-background p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-secondary/50 mb-4">
             <BookOpen className="h-8 w-8 text-muted-foreground" />
           </div>

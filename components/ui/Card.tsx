@@ -5,7 +5,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   padded?: boolean;
 }
 
-export function Card({ className, padded = true, ...props }: CardProps) {
+export function Card({ className, padded = false, ...props }: CardProps) {
   return (
     <div
       className={cn('rounded-lg border bg-card text-card-foreground glass-panel', padded && 'p-6', className)}

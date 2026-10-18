@@ -7,7 +7,7 @@
 Report vulnerabilities privately through one of these channels:
 
 - **Preferred:** [GitHub Security Advisories](https://github.com/divyanshakya966/Next-Gen-Skillforge/security/advisories/new) (Report a vulnerability)
-- **Email:** 196189584+divyanshakya966@users.noreply.github.com
+- **Email:** divyanshakya.dev@gmail.com
 
 Please include:
 

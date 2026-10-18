@@ -1,4 +1,3 @@
-import type { SocialLinks } from './types';
 
 export type AIProvider = 'openai' | 'azure_openai' | 'anthropic' | 'huggingface' | 'none';
 
