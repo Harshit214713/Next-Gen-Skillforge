@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
 
-// Re-implement pure validation functions from analysis.ts for isolated testing
-// (they are module-private, not exported)
-
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }

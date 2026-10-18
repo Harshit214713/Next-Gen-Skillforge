@@ -10,7 +10,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('api-client behavior (via integration)', () => {
+describe('api-client behavior', () => {
   it('handleResponse throws on non-ok responses', async () => {
     const errorBody = { error: 'Invalid payload' };
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(errorBody), {
@@ -18,8 +18,8 @@ describe('api-client behavior (via integration)', () => {
       headers: { 'content-type': 'application/json' },
     })));
 
-    // Import dynamically after mocking fetch
-    const { apiPost } = await import('@/lib/api-client');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { apiPost } = await import('../../lib/api-client');
 
     await expect(apiPost('/api/test', {})).rejects.toThrow('Invalid payload');
   });
@@ -31,7 +31,7 @@ describe('api-client behavior (via integration)', () => {
       headers: { 'content-type': 'application/json' },
     })));
 
-    const { apiGet } = await import('@/lib/api-client');
+    const { apiGet } = await import('../../lib/api-client');
 
     const result = await apiGet('/api/test');
     expect(result).toEqual(data);
@@ -44,7 +44,7 @@ describe('api-client behavior (via integration)', () => {
       headers: { 'content-type': 'application/pdf' },
     })));
 
-    const { apiGet } = await import('@/lib/api-client');
+    const { apiGet } = await import('../../lib/api-client');
 
     const result = await apiGet('/api/report');
     expect(result).toBeInstanceOf(Blob);
@@ -57,7 +57,7 @@ describe('api-client behavior (via integration)', () => {
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const { apiGet } = await import('@/lib/api-client');
+    const { apiGet } = await import('../../lib/api-client');
     await apiGet('/api/test');
 
     const calls = (fetchMock.mock.calls as unknown) as [string, any][];

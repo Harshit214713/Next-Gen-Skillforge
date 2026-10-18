@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 
-// Pure functions are re-implemented locally since they are module-private in preferences.ts
-
 const LINK_KEYS = ['github', 'linkedin', 'resume', 'twitter', 'portfolio', 'devto'] as const;
 
 function sanitizeThemeTest(input: unknown): 'light' | 'dark' | undefined {

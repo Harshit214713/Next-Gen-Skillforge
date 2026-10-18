@@ -8,8 +8,8 @@ import {
   makeSessionCookie,
   clearSessionCookie,
   type Env,
-} from '@/src/session';
-import type { DashboardSessionData } from '@/src/types';
+} from '../src/session';
+import type { DashboardSessionData } from '../src/types';
 
 const mockSecret = 'test-secret-minimum-thirty-two-characters-long';
 
