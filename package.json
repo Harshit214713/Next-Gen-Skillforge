@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "next build && npx @cloudflare/next-on-pages",
-    "deploy:cf": "npx wrangler pages deploy .next",
+    "build:cf": "next build",
+    "deploy:cf": "npx wrangler pages deploy out/ --project-name next-gen-skillforge",
+    "dev:worker": "wrangler dev src/index.ts",
+    "deploy:worker": "wrangler deploy src/index.ts",
     "start": "next start",
     "lint": "next lint"
   },
@@ -15,6 +17,7 @@
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.31",
+    "hono": "^4.13.13",
     "iron-session": "^8.0.4",
     "lucide-react": "^0.441.0",
     "mammoth": "^1.12.0",
@@ -27,6 +30,7 @@
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.0",
+    "@cloudflare/workers-types": "^4.20241112.0",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18",

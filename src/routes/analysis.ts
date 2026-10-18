@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { getDashboardSession, type AnalysisSessionData } from '@/lib/session';
-import type { SocialLinks, UserProfile } from '@/lib/types';
+import { Hono } from 'hono';
+import { getSession, saveSession, makeSessionCookie, clearSessionCookie, type Env } from '../session';
+import type { SocialLinks, DashboardSessionData } from '../types';
 
-export const runtime = 'edge';
+const app = new Hono<{ Bindings: Env; Variables: { session: DashboardSessionData } }>();
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -18,7 +18,6 @@ function isStringArray(value: unknown): value is string[] {
 
 function isSocialLinks(value: unknown): value is SocialLinks {
   if (!isObject(value)) return false;
-
   return (
     isString(value.github)
     && isString(value.linkedin)
@@ -55,7 +54,6 @@ function isJobRecommendationArray(value: unknown): boolean {
 
 function isAISummary(value: unknown): boolean {
   if (!isObject(value)) return false;
-
   return (
     isString(value.overview)
     && isStringArray(value.strengths)
@@ -83,11 +81,11 @@ function isLearningPathArray(value: unknown): boolean {
         && (typeof resource.provider === 'undefined' || isString(resource.provider))
         && isString(resource.url)
         && typeof resource.free === 'boolean'));
+  ;
 }
 
-function isUserProfile(value: unknown): value is UserProfile {
+function isUserProfile(value: unknown): value is { links: SocialLinks; technicalSkills: unknown; softSkills: unknown; jobRecommendations: unknown; aiSummary: unknown; learningPath: unknown } {
   if (!isObject(value)) return false;
-
   return (
     isSocialLinks(value.links)
     && isSkillDataArray(value.technicalSkills)
@@ -107,77 +105,67 @@ function linkSignature(links?: Partial<SocialLinks> | null): string {
     portfolio: links?.portfolio ?? '',
     devto: links?.devto ?? '',
   };
-
   return JSON.stringify(normalized);
 }
 
-function sanitizeAnalysis(input: unknown): AnalysisSessionData | null {
+function sanitizeAnalysis(input: unknown): { signature: string; profile: unknown } | null {
   if (!isObject(input)) return null;
-
   const signature = typeof input.signature === 'string' ? input.signature : '';
   const profile = input.profile;
-
-  if (!signature || !isUserProfile(profile)) {
-    return null;
-  }
-
-  return {
-    signature,
-    profile: profile as UserProfile,
-  };
+  if (!signature || !isUserProfile(profile)) return null;
+  return { signature, profile };
 }
 
-export async function GET() {
-  const session = await getDashboardSession();
+app.get('/', async (c) => {
+  const session = c.get('session') as Awaited<ReturnType<typeof getSession>>;
   const currentSignature = linkSignature(session.preferences?.links ?? null);
   const analysis = session.analysis;
 
   if (analysis && analysis.signature === currentSignature) {
-    return NextResponse.json({
-      analysis,
-    });
+    return c.json({ analysis });
   }
 
   if (analysis) {
     delete session.analysis;
-    await session.save();
+    await saveSession(c.env, session);
   }
 
-  return NextResponse.json({
-    analysis: null,
-  });
-}
+  return c.json({ analysis: null });
+});
 
-export async function POST(request: Request) {
+app.post('/', async (c) => {
   let body: unknown;
-
   try {
-    body = await request.json();
+    body = await c.req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+    return c.json({ error: 'Invalid JSON body.' }, 400);
   }
 
   const analysis = sanitizeAnalysis(isObject(body) ? body.analysis : null);
-
   if (!analysis) {
-    return NextResponse.json({ error: 'Invalid analysis payload.' }, { status: 400 });
+    return c.json({ error: 'Invalid analysis payload.' }, 400);
   }
 
-  const session = await getDashboardSession();
+  const session = c.get('session') as Awaited<ReturnType<typeof getSession>>;
   session.analysis = analysis;
   session.preferences = {
     ...(session.preferences ?? {}),
-    links: analysis.profile.links,
+    links: (analysis.profile as { links?: SocialLinks }).links,
   };
-  await session.save();
+  const encrypted = await saveSession(c.env, session);
 
-  return NextResponse.json({ ok: true, analysis: session.analysis });
-}
+  return c.json({ ok: true, analysis: session.analysis }, {
+    headers: { 'Set-Cookie': makeSessionCookie(encrypted) },
+  });
+});
 
-export async function DELETE() {
-  const session = await getDashboardSession();
+app.delete('/', async (c) => {
+  const session = c.get('session') as Awaited<ReturnType<typeof getSession>>;
   delete session.analysis;
-  await session.save();
+  const encrypted = await saveSession(c.env, session);
+  return c.json({ ok: true }, {
+    headers: { 'Set-Cookie': makeSessionCookie(encrypted) },
+  });
+});
 
-  return NextResponse.json({ ok: true });
-}
+export default app;

@@ -1,9 +1,10 @@
 name = "next-gen-skillforge"
 compatibility_date = "2024-11-01"
+main = "src/index.ts"
 
 [observability]
 enabled = true
 
-[pages]
-build_command = "npm run build:cf"
-pages_build_output_dir = ".next"
+[[kv_namespaces]]
+binding = "SESSION_KV"
+id = "5773a2d63e6d49c0848b25db2f2762d5"

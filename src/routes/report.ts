@@ -1,13 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import type { UserProfile } from '@/lib/types';
-
-export const runtime = 'edge';
-
-interface DownloadReportBody {
-  profile?: UserProfile;
-}
+import { Hono } from 'hono';
+import type { UserProfile } from '../../lib/types';
+import type { DashboardSessionData } from '../types';
+import type { Env } from '../session';
 
 type LineStyle = 'title' | 'meta' | 'section' | 'body' | 'bullet';
+
+const app = new Hono<{ Bindings: Env; Variables: { session: DashboardSessionData } }>();
 
 interface StyledLine {
   text: string;
@@ -28,10 +26,8 @@ function isStringArray(value: unknown): value is string[] {
 
 function isUserProfile(value: unknown): value is UserProfile {
   if (!isObject(value)) return false;
-
   const links = value.links;
   const aiSummary = value.aiSummary;
-
   if (!isObject(links) || !isObject(aiSummary)) return false;
 
   const hasValidLinks = isString(links.github)
@@ -118,7 +114,6 @@ function wrapText(value: string, maxLength = 95): string[] {
   const words = stripMarkdown(value).split(' ');
   const lines: string[] = [];
   let current = '';
-
   for (const word of words) {
     const next = current ? `${current} ${word}` : word;
     if (next.length <= maxLength) {
@@ -128,7 +123,6 @@ function wrapText(value: string, maxLength = 95): string[] {
       current = word;
     }
   }
-
   if (current) lines.push(current);
   return lines.length > 0 ? lines : ['N/A'];
 }
@@ -137,12 +131,10 @@ function pushSection(lines: StyledLine[], title: string, values: string[]) {
   lines.push({ text: '', style: 'body' });
   lines.push({ text: title.toUpperCase(), style: 'section' });
   lines.push({ text: '', style: 'body' });
-
   if (values.length === 0) {
     lines.push({ text: 'N/A', style: 'bullet' });
     return;
   }
-
   for (const value of values) {
     const wrapped = wrapText(value);
     wrapped.forEach((line, index) => {
@@ -221,7 +213,6 @@ function buildReportLines(profile: UserProfile): StyledLine[] {
       const resources = item.resources.length > 0
         ? item.resources.map((resource) => `${resource.title}${resource.provider ? ` (${resource.provider})` : ''}`).join('; ')
         : 'N/A';
-
       return [
         `${item.topic} (${item.priority.toUpperCase()})`,
         `Time estimate: ${toSafeText(item.timeEstimate)}`,
@@ -234,7 +225,7 @@ function buildReportLines(profile: UserProfile): StyledLine[] {
   return lines;
 }
 
-function buildReportPdf(profile: UserProfile): Buffer {
+function buildReportPdf(profile: UserProfile): Uint8Array {
   const lines = buildReportLines(profile);
   const pageHeight = 842;
   const topMargin = 64;
@@ -331,7 +322,7 @@ function buildReportPdf(profile: UserProfile): Buffer {
       `${pageObjectNumber} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObjectNumber} 0 R /F2 ${boldFontObjectNumber} 0 R >> >> /Contents ${contentObjectNumber} 0 R >> endobj`,
     );
     objects.push(
-      `${contentObjectNumber} 0 obj << /Length ${Buffer.byteLength(stream, 'latin1')} >> stream\n${stream}\nendstream endobj`,
+      `${contentObjectNumber} 0 obj << /Length ${new TextEncoder().encode(stream).byteLength} >> stream\n${stream}\nendstream endobj`,
     );
   });
 
@@ -339,11 +330,11 @@ function buildReportPdf(profile: UserProfile): Buffer {
   const offsets: number[] = [0];
 
   for (const object of objects) {
-    offsets.push(Buffer.byteLength(pdf, 'latin1'));
+    offsets.push(new TextEncoder().encode(pdf).byteLength);
     pdf += `${object}\n`;
   }
 
-  const xrefStart = Buffer.byteLength(pdf, 'latin1');
+  const xrefStart = new TextEncoder().encode(pdf).byteLength;
   pdf += `xref\n0 ${offsets.length}\n`;
   pdf += '0000000000 65535 f \n';
   for (let i = 1; i < offsets.length; i += 1) {
@@ -353,23 +344,22 @@ function buildReportPdf(profile: UserProfile): Buffer {
   pdf += `trailer << /Size ${offsets.length} /Root 1 0 R >>\n`;
   pdf += `startxref\n${xrefStart}\n%%EOF`;
 
-  return Buffer.from(pdf, 'latin1');
+  return new TextEncoder().encode(pdf);
 }
 
-export async function POST(request: NextRequest) {
+app.post('/', async (c) => {
   try {
-    const body = (await request.json()) as DownloadReportBody;
+    const body = (await c.req.json()) as { profile?: unknown };
     const profile = isUserProfile(body?.profile) ? body.profile : null;
 
     if (!profile) {
-      return NextResponse.json({ error: 'Invalid or missing analysis report payload.' }, { status: 400 });
+      return c.json({ error: 'Invalid or missing analysis report payload.' }, 400);
     }
 
-    const pdfBuffer = buildReportPdf(profile);
-    const pdfBytes = new Uint8Array(pdfBuffer);
+    const pdfBytes = buildReportPdf(profile);
     const fileStamp = new Date().toISOString().slice(0, 10);
 
-    return new NextResponse(pdfBytes, {
+    return new Response(new Blob([pdfBytes as any]), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -379,6 +369,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to build report PDF', error);
-    return NextResponse.json({ error: 'Failed to generate PDF report.' }, { status: 500 });
+    return c.json({ error: 'Failed to generate PDF report.' }, 500);
   }
-}
+});
+
+export default app;

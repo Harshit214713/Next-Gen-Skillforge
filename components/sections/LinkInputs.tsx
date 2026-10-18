@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import axios from 'axios';
 import { Upload, ExternalLink, BookOpen, Github, Linkedin } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';

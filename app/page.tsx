@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createEmptyUserProfile } from '@/lib/profileDefaults';
+import {
+  apiDelete,
+  apiGet,
+  apiPost,
+  apiPostForm,
+} from '@/lib/api-client';
 import type {
   JobRecommendation,
   LearningPathItem,
@@ -138,7 +143,7 @@ export default function HomePage() {
 
   const updateLink = (field: keyof SocialLinks, value: string) => {
     setLinks((prev) => ({ ...prev, [field]: value }));
-    void fetch('/api/session/analysis', { method: 'DELETE' });
+    void apiDelete('/api/session/analysis');
     resetAnalysis();
     setAnalysisMessage('Edit completed links, then click Analyze Profile to refresh recommendations.');
     if (!isUrlValid(value)) {
@@ -163,10 +168,12 @@ export default function HomePage() {
     setAnalysisError(null);
 
     try {
-      const response = await fetch('/api/report/download', {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://next-gen-skillforge.divyanshakya.workers.dev';
+      const response = await fetch(`${apiBase}/api/report/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: getCurrentProfile() }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -204,11 +211,11 @@ export default function HomePage() {
       const formData = new FormData();
       formData.append('resume', file);
 
-      const response = await axios.post('/api/resume/import', formData);
+      const response = (await apiPostForm('/api/resume/import', formData)) as { resumeText?: string; fileName?: string; detectedSkills?: unknown };
 
-      const parsedResumeText = typeof response.data?.resumeText === 'string' ? response.data.resumeText : '';
-      const parsedFileName = typeof response.data?.fileName === 'string' ? response.data.fileName : file.name;
-      const detectedSkills = Array.isArray(response.data?.detectedSkills) ? response.data.detectedSkills : [];
+      const parsedResumeText = typeof response?.resumeText === 'string' ? response.resumeText : '';
+      const parsedFileName = typeof response?.fileName === 'string' ? response.fileName : file.name;
+      const detectedSkills = Array.isArray(response?.detectedSkills) ? response.detectedSkills : [];
 
       setResumeText(parsedResumeText);
       setResumeFileName(parsedFileName);
@@ -256,75 +263,67 @@ export default function HomePage() {
     setExtractedSkills([]);
 
     try {
-      const response = await axios.post('/api/analyze-profile', {
+      const response = (await apiPost('/api/analyze-profile', {
         links,
         resumeText,
         resumeFileName,
-      });
-      const skills = response.data.skills || [];
-      const aiTech = (response.data.aiTechnicalSkills || []).map((s: any) => ({
+      })) as { skills?: unknown[]; aiTechnicalSkills?: unknown[]; aiSoftSkills?: unknown[]; aiSummary?: string; aiGaps?: string[]; aiStrengths?: string[]; aiIndustryRelevanceScore?: number; aiAtsScore?: number; aiAtsFeedback?: string[]; aiAtsAvailable?: boolean; aiIndustryInsights?: string; aiTopSkills?: string[]; aiJobRecommendations?: unknown[]; aiLearningPath?: unknown[]; linkWarnings?: unknown[] };
+      const skills = response.skills || [];
+      const aiTech = (response.aiTechnicalSkills || []).map((s: any) => ({
         skill: s.name,
         value: Number(s.score || s.confidence * 100 || 0),
         fullMark: 100,
       }));
-      const aiSoft = (response.data.aiSoftSkills || []).map((s: any) => ({
+      const aiSoft = (response.aiSoftSkills || []).map((s: any) => ({
         skill: s.name,
         value: Number(s.score || s.confidence * 100 || 0),
         fullMark: 100,
       }));
 
-      setExtractedSkills(skills);
-      setAiSummary(response.data.aiSummary || '');
-      setAiGaps(response.data.aiGaps || []);
-      setAiStrengths(response.data.aiStrengths || []);
+      setExtractedSkills(skills as Skill[]);
+      setAiSummary(response.aiSummary || '');
+      setAiGaps(response.aiGaps || []);
+      setAiStrengths(response.aiStrengths || []);
       setAiTechnicalSkills(aiTech);
       setAiSoftSkills(aiSoft);
 
-      setIndustryRelevanceScore(response.data.aiIndustryRelevanceScore ?? 0);
-      setAtsScore(response.data.aiAtsScore ?? 0);
-      setAtsFeedback(response.data.aiAtsFeedback || []);
-      setAtsAvailable(Boolean(response.data.aiAtsAvailable));
-      setIndustryInsights(response.data.aiIndustryInsights || '');
-      setTopSkills(response.data.aiTopSkills || []);
-      setJobs(response.data.aiJobRecommendations || []);
-      setLearningPath(response.data.aiLearningPath || []);
+      setIndustryRelevanceScore(response.aiIndustryRelevanceScore ?? 0);
+      setAtsScore(response.aiAtsScore ?? 0);
+      setAtsFeedback(response.aiAtsFeedback || []);
+      setAtsAvailable(Boolean(response.aiAtsAvailable));
+      setIndustryInsights(response.aiIndustryInsights || '');
+      setTopSkills(response.aiTopSkills || []);
+      setJobs(response.aiJobRecommendations as JobRecommendation[]);
+      setLearningPath(response.aiLearningPath as LearningPathItem[]);
       setHasCompletedAnalysis(true);
 
-      const linkWarnings = Array.isArray(response.data?.linkWarnings) ? response.data.linkWarnings : [];
+      const linkWarnings = Array.isArray(response.linkWarnings) ? (response.linkWarnings as { source: string; reason?: string }[]) : [];
 
       const processedProfile: UserProfile = {
         links,
         technicalSkills: aiTech,
         softSkills: aiSoft,
-        jobRecommendations: response.data.aiJobRecommendations || [],
+        jobRecommendations: (response.aiJobRecommendations as JobRecommendation[]) || [],
         aiSummary: {
-          overview: response.data.aiSummary || '',
-          strengths: response.data.aiStrengths || [],
-          gaps: response.data.aiGaps || [],
-          industryRelevanceScore: response.data.aiIndustryRelevanceScore ?? 0,
-          atsScore: response.data.aiAtsScore ?? 0,
-          atsFeedback: response.data.aiAtsFeedback || [],
-          industryInsights: response.data.aiIndustryInsights || '',
-          topSkills: response.data.aiTopSkills || [],
+          overview: response.aiSummary || '',
+          strengths: response.aiStrengths || [],
+          gaps: response.aiGaps || [],
+          industryRelevanceScore: response.aiIndustryRelevanceScore ?? 0,
+          atsScore: response.aiAtsScore ?? 0,
+          atsFeedback: response.aiAtsFeedback || [],
+          industryInsights: response.aiIndustryInsights || '',
+          topSkills: response.aiTopSkills || [],
         },
-        learningPath: response.data.aiLearningPath || [],
+        learningPath: (response.aiLearningPath as LearningPathItem[]) || [],
       };
 
       try {
-        const saveResponse = await fetch('/api/session/analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            analysis: {
-              signature: JSON.stringify(links),
-              profile: processedProfile,
-            },
-          }),
+        await apiPost('/api/session/analysis', {
+          analysis: {
+            signature: JSON.stringify(links),
+            profile: processedProfile,
+          },
         });
-
-        if (!saveResponse.ok) {
-          setAnalysisMessage((prev) => `${prev || ''} Result could not be saved to this browser session.`);
-        }
       } catch {
         setAnalysisMessage((prev) => `${prev || ''} Saving to this browser session failed.`);
       }
@@ -340,11 +339,11 @@ export default function HomePage() {
       }
     } catch (err: any) {
       if (err.response?.status === 400 && err.response?.data?.details) {
-        const details = err.response.data.details as Array<{ source: string; url: string; reason: string }>;
+        const details = err.response.details as Array<{ source: string; url: string; reason: string }>;
         const errorList = details.map((d) => `${d.source}: ${d.reason}`).join('\n');
         setAnalysisError(`Link verification failed:\n\n${errorList}\n\nPlease check the links and try again.`);
       } else if (err.response?.data?.error) {
-        setAnalysisError(err.response.data.error);
+        setAnalysisError(err.response.error);
       } else {
         setAnalysisError('Failed to analyze profile. Please try again.');
       }
@@ -359,13 +358,7 @@ export default function HomePage() {
 
     const loadPreferences = async () => {
       try {
-        const response = await fetch('/api/session/preferences', { cache: 'no-store' });
-
-        if (!response.ok) {
-          throw new Error('Unable to fetch preferences from session API.');
-        }
-
-        const payload = (await response.json()) as {
+        const payload = (await apiGet('/api/session/preferences')) as {
           theme?: ThemeMode;
           links?: Partial<SocialLinks>;
         };
@@ -382,14 +375,13 @@ export default function HomePage() {
           setLinks((prev) => ({ ...prev, ...payload.links }));
         }
 
-        const analysisResponse = await fetch('/api/session/analysis', { cache: 'no-store' });
-        if (analysisResponse.ok) {
-          const payload = (await analysisResponse.json()) as {
-            analysis?: { profile?: UserProfile } | null;
-          };
+        const analysisPayload = (await apiGet('/api/session/analysis')) as {
+          analysis?: { profile?: UserProfile } | null;
+        };
 
-          const savedProfile = payload.analysis?.profile;
-          if (savedProfile) {
+        const savedProfile = analysisPayload.analysis?.profile;
+
+        if (savedProfile) {
             setLinks(savedProfile.links);
             setExtractedSkills(
               savedProfile.technicalSkills.map((skill) => ({
@@ -414,8 +406,7 @@ export default function HomePage() {
             setHasCompletedAnalysis(true);
             setAnalysisMessage('Loaded saved analysis for this browser session.');
           }
-        }
-      } catch {
+        } catch {
         const savedTheme = window.localStorage.getItem('theme-mode');
         if (savedTheme === 'dark' || savedTheme === 'light') {
           setTheme(savedTheme);
@@ -447,12 +438,14 @@ export default function HomePage() {
     }
 
     const requestController = new AbortController();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://next-gen-skillforge.divyanshakya.workers.dev';
     const saveTimer = window.setTimeout(() => {
-      void fetch('/api/session/preferences', {
+      void fetch(`${API_BASE_URL}/api/session/preferences`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme, links }),
         signal: requestController.signal,
+        credentials: 'include',
       }).catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
