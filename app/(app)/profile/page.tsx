@@ -292,6 +292,7 @@ export default function ProfilePage() {
                             leftIcon={field.icon}
                             error={error}
                             disabled={uploading}
+                            className="pr-20 pl-9"
                           />
                           <button
                             type="button"
