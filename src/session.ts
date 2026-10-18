@@ -26,7 +26,7 @@ function deriveKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-async function encryptValue(plaintext: string, secret: string): Promise<string> {
+export async function encryptValue(plaintext: string, secret: string): Promise<string> {
   const key = await deriveKey(secret);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const enc = new TextEncoder();
@@ -38,7 +38,7 @@ async function encryptValue(plaintext: string, secret: string): Promise<string> 
   return base64;
 }
 
-async function decryptValue(ciphertextB64: string, secret: string): Promise<string | null> {
+export async function decryptValue(ciphertextB64: string, secret: string): Promise<string | null> {
   try {
     const key = await deriveKey(secret);
     const combined = Uint8Array.from(atob(ciphertextB64), (c) => c.charCodeAt(0));
@@ -90,7 +90,7 @@ export async function saveSession(env: Env, session: DashboardSessionData): Prom
   return encrypted;
 }
 
-function parseCookies(cookieHeader: string): Record<string, string> {
+export function parseCookies(cookieHeader: string): Record<string, string> {
   const cookies: Record<string, string> = {};
   for (const part of cookieHeader.split(';')) {
     const [name, ...valueParts] = part.split('=');

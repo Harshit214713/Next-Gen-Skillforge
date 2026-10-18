@@ -2,6 +2,12 @@
 
 Thank you for your interest in contributing! This project is open to contributors from **Nexus Spring of Code** and the wider open source community.
 
+## Architecture
+
+- **Frontend**: Next.js static export deployed to Cloudflare Pages (`app/`, `components/`, `lib/`)
+- **Backend**: Cloudflare Worker (Hono) deployed to `workers.dev` (`src/`)
+- The frontend calls the Worker API via `NEXT_PUBLIC_API_URL`
+
 ## Getting Started
 
 1. Fork the repository.
@@ -21,17 +27,26 @@ Thank you for your interest in contributing! This project is open to contributor
 4. Install dependencies:
 
    ```bash
-   npm install
+   npm ci
    ```
 
-5. Make your changes.
-6. Run lint:
+5. Authenticate with Cloudflare (for local Worker development):
 
    ```bash
-   npm run lint
+   npx wrangler login
    ```
 
-7. Commit and push:
+6. Make your changes.
+7. Run checks locally before pushing:
+
+   ```bash
+   npm run lint        # ESLint
+   npm run typecheck   # TypeScript
+   npm run test        # Vitest
+   npm run build:cf    # Next.js static export
+   ```
+
+8. Commit and push:
 
    ```bash
    git add .
@@ -39,7 +54,20 @@ Thank you for your interest in contributing! This project is open to contributor
    git push origin feature/your-feature-name
    ```
 
-8. Open a Pull Request against `main`.
+9. Open a Pull Request against `main`.
+
+## Required CI Checks
+
+Every PR must pass the following GitHub Actions checks before it can be merged:
+
+| Check | Command |
+|-------|---------|
+| Lint | `npm run lint` |
+| Type Check | `npm run typecheck` |
+| Tests | `npm run test` |
+| Build | `npm run build:cf` |
+
+Branch protection on `main** requires all four checks to pass. PRs cannot be merged if any check fails.
 
 ## How to Contribute
 
@@ -53,11 +81,12 @@ Thank you for your interest in contributing! This project is open to contributor
 - Follow the existing TypeScript and ESLint configuration.
 - Use Tailwind CSS for styling.
 - Keep components small and focused.
-- Place API routes under `app/api/` and shared logic under `lib/`.
+- Place Worker API routes under `src/routes/` and shared logic under `lib/`.
+- Place Next.js frontend code under `app/` and `components/`.
 
 ## Deployment
 
-This project is hosted on **Cloudflare Pages**. See the Deployment section in README for details.
+This project is deployed to **Cloudflare** (Pages for frontend, Workers for backend). See the Deployment section in README for details.
 
 ## Code of Conduct
 

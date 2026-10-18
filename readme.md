@@ -5,132 +5,178 @@
 [![Contributors](https://img.shields.io/github/contributors/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/graphs/contributors)
 [![Issues](https://img.shields.io/github/issues/divyanshakya966/Next-Gen-Skillforge)](https://github.com/divyanshakya966/Next-Gen-Skillforge/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Hosted on Cloudflare Pages](https://img.shields.io/badge/Hosted%20on-Cloudflare%20Pages-F38020?logo=cloudflare)](https://pages.cloudflare.com/)
+[![Hosted on Cloudflare](https://img.shields.io/badge/Hosted%20on-Cloudflare-F38020?logo=cloudflare)](https://cloudflare.com/)
+[![CI](https://img.shields.io/github/actions/status/divyanshakya966/Next-Gen-Skillforge/ci?label=CI)](https://github.com/divyanshakya966/Next-Gen-Skillforge/actions/workflows/ci.yml)
 
 
-Next-Gen Skillforge is an AI-powered career intelligence dashboard built with Next.js. It analyzes public profile links and resume content, extracts skill signals, generates role-fit insights, and creates a personalized learning roadmap.
+Next-Gen Skillforge is an AI-powered career intelligence dashboard. It analyzes public profile links and resume content, extracts skill signals, generates role-fit insights, and creates a personalized learning roadmap.
+
+## Architecture
+
+The project is split into two independently deployed parts on Cloudflare:
+
+| Component | Platform | Purpose |
+|-----------|----------|---------|
+| **Frontend** | Cloudflare Pages | Next.js static export serving the dashboard UI |
+| **Backend** | Cloudflare Workers | Hono-based API handling session, analysis, resume import, and PDF report generation |
+
+The frontend calls the Worker backend via `NEXT_PUBLIC_API_URL`. Session data is stored in Workers KV with encrypted cookies.
 
 ## Core Functionality
 
 - Link-based profile analysis (GitHub, LinkedIn, portfolio, resume URL, Twitter, Dev.to).
-- Resume upload and parsing (`.pdf`, `.docx`, `.txt`) with detected skill keywords.
+- Resume upload and parsing (`.txt`; `.pdf`/`.docx` parsing unavailable on Workers).
 - AI-generated outputs:
-	- Technical and soft skill scoring.
-	- Summary, strengths, and growth gaps.
-	- Industry relevance score.
-	- ATS score with actionable feedback (when resume text is available).
-	- Job recommendations with match percentage and fit reason.
-	- Prioritized learning path with resource links.
+  - Technical and soft skill scoring.
+  - Summary, strengths, and growth gaps.
+  - Industry relevance score.
+  - ATS score with actionable feedback (when resume text is available).
+  - Job recommendations with match percentage and fit reason.
+  - Prioritized learning path with resource links.
 - Downloadable PDF report from analyzed profile data.
 - Session-backed persistence for preferences and last valid analysis.
-- Optional profile snapshot export to generated TypeScript/JSON files.
 
 ## Tech Stack
 
-- Next.js 14 (App Router)
+- Next.js 15 (App Router, static export)
 - React 18 + TypeScript
 - Tailwind CSS
 - Framer Motion
 - Recharts
-- iron-session
-- Axios + Cheerio
-- pdf-parse + mammoth
+- Hono (Worker API)
+- Vitest (testing)
+- Cloudflare Workers KV (session storage)
 
-## Architecture Overview
+## Project Structure
 
 ```text
 next-gen-skillforge/
-├── app/
-│   ├── page.tsx
-│   │   └── Interactive dashboard UI, link input, resume import, analysis trigger, and results panels.
-│   └── api/
-│       ├── analyze-profile/
-│       │   └── route.ts      -> URL validation, scraping, skill extraction, AI orchestration, and response shaping.
-│       ├── resume/
-│       │   └── import/
-│       │       └── route.ts  -> Resume file parsing and keyword detection.
-│       ├── report/
-│       │   └── download/
-│       │       └── route.ts  -> Generates a PDF report from validated profile payload.
-│       ├── session/
-│       │   ├── preferences/
-│       │   │   └── route.ts  -> Stores theme, links, and UI preference state.
-│       │   └── analysis/
-│       │       └── route.ts  -> Stores/retrieves/clears current analysis in session.
-│       └── profile/
-│           └── snapshot/
-│               └── route.ts  -> Writes lib/generatedUserProfile.ts with JSON fallback.
-└── lib/
-	├── ai.ts
-	│   └── Multi-provider AI adapter and normalized profile analysis parsing.
-	└── session.ts
-		└── Session secret handling and cookie configuration.
+├── app/                 # Next.js frontend (App Router)
+│   ├── page.tsx         # Dashboard UI
+│   └── layout.tsx       # Root layout
+├── components/          # React components
+│   ├── layout/
+│   ├── sections/
+│   └── ui/
+├── lib/                 # Shared libraries
+│   ├── api-client.ts    # Fetch-based API client (calls Worker)
+│   ├── ai.ts            # AI provider adapters (OpenAI, Anthropic, etc.)
+│   ├── profileDefaults.ts
+│   ├── types.ts
+│   └── utils.ts
+├── src/                 # Cloudflare Worker backend
+│   ├── index.ts         # Hono app entry point + routing
+│   ├── session.ts       # KV-backed encrypted cookie sessions
+│   ├── types.ts         # Worker types
+│   └── routes/          # API route handlers
+│       ├── preferences.ts
+│       ├── analysis.ts
+│       ├── resume.ts
+│       └── report.ts
+├── public/              # Static assets
+├── wrangler.toml        # Worker configuration
+├── next.config.mjs      # Next.js config (static export)
+├── vitest.config.ts     # Test configuration
+└── package.json
 ```
 
-## UX Flow
+## Local Development
 
-1. Add professional links and/or import a resume file.
-2. Run profile analysis.
-3. Review skill graphs, recommendations, ATS feedback, and learning path.
-4. Download the generated PDF report.
-5. Return later with session-restored preferences and analysis (when link signature matches).
+### Prerequisites
 
-## Contributing
+- Node.js v22+
+- Wrangler CLI (`npm install -g wrangler`)
+- Cloudflare account
 
-We welcome contributions from **Nexus Spring of Code** participants and the open source community! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+### Setup
 
-Good starting points are issues labeled `good first issue` and `help wanted`.
+```bash
+# Install dependencies
+npm ci
+
+# Authenticate with Cloudflare
+npx wrangler login
+
+# Create the KV namespace (one-time)
+npx wrangler kv:namespace create "SESSION_KV"
+# Add the returned ID to wrangler.toml under [[kv_namespaces]] id
+
+# Set the session secret (one-time)
+npx wrangler secret put SESSION_SECRET
+# Value must be at least 32 characters
+
+# Start the Worker locally (port 8787)
+npm run dev:worker
+
+# Start the Next.js frontend locally (port 3000)
+npm run dev
+```
+
+The frontend calls `https://next-gen-skillforge.divyanshakya.workers.dev` by default. Override with `NEXT_PUBLIC_API_URL` if using a custom Worker URL.
+
+### Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start Next.js dev server |
+| `npm run dev:worker` | Start Worker locally with wrangler |
+| `npm run build` | Build Next.js production bundle |
+| `npm run build:cf` | Build static export for Cloudflare Pages (`out/`) |
+| `npm run deploy:worker` | Deploy Worker to Cloudflare |
+| `npm run deploy:cf` | Deploy static frontend to Cloudflare Pages |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript type check |
+| `npm run test` | Run Vitest test suite |
+
+## CI/CD
+
+GitHub Actions runs on every push and PR to `main`:
+
+1. **Lint** — ESLint
+2. **Type Check** — `tsc --noEmit`
+3. **Tests** — Vitest unit tests
+4. **Build** — Next.js static export (`out/`)
+5. **Deploy** (main branch only) — Worker + Pages deployment
+
+Required secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers/Pages edit permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 
 ## Deployment
 
-This project is hosted on **Cloudflare Pages** using the [Next.js on Cloudflare Pages](https://developers.cloudflare.com/pages/framework-guides/nextjs/) integration.
+### Frontend (Cloudflare Pages)
 
-### Deploying to Cloudflare Pages
+1. Connect the repository to Cloudflare Pages.
+2. Build command: `npm run build:cf`
+3. Output directory: `out/`
+4. Environment variables: `NEXT_PUBLIC_API_URL` (Worker URL)
 
-1. Connect your GitHub repository to [Cloudflare Pages](https://dash.cloudflare.com/pages).
-2. Set the build command to `npm run build:cf`.
-3. Set the build output directory to `.next`.
-4. Add any required environment variables (e.g. API keys) in the Pages dashboard.
+### Backend (Cloudflare Workers)
 
-Environment variables are configured via `wrangler.toml` and the Cloudflare dashboard.
+1. Run `npx wrangler deploy src/index.ts`
+2. Ensure `SESSION_KV` KV namespace is bound in `wrangler.toml`
+3. Ensure `SESSION_SECRET` is set via `wrangler secret put SESSION_SECRET`
 
-## Notes
+## Testing
 
-- URL handling includes SSRF-focused safeguards (no localhost/private network targets).
-- Session data is cookie-backed and encrypted via `iron-session`.
-- Resume ATS scoring is most useful after successful resume import.
-- Snapshot files are generated artifacts and can be regenerated anytime.
+```bash
+npm run test          # Run all tests once
+npm run test:watch    # Watch mode
+```
 
-## Future Enhancements (Startup Roadmap)
+Tests cover session encryption/cookie handling, link/sanitization validation, analysis payload validation, PDF report utilities, and the API client.
 
-These enhancements can help evolve Next-Gen Skillforge from a prototype into a startup-ready product:
+## Contributing
 
-- User accounts and persistent profile history
-	- Allow users to track progress over weeks/months and compare score deltas over time.
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
 
-- Recruiter and hiring manager mode
-	- Add candidate comparison views, shortlist pipelines, and shareable evaluation reports.
+All PRs must pass the CI checks (lint, typecheck, tests, build) before merging to `main`.
 
-- Subscription tiers (B2C + B2B)
-	- Free tier for basic analysis, Pro for deeper insights/reports, and Team plans for bootcamps or hiring teams.
+Good starting points are issues labeled `good first issue` and `help wanted`.
 
-- Job board and ATS integrations
-	- Connect with LinkedIn Jobs, Greenhouse, Lever, and Workday to deliver role-specific match insights.
+## License
 
-- Interview preparation assistant
-	- Generate mock interview questions from detected skill gaps and provide feedback loops.
-
-- Learning path execution tracking
-	- Add milestone checklists, reminders, and completion analytics to increase retention and outcomes.
-
-- AI cost and reliability layer
-	- Add provider fallback, response caching, retries, and per-feature token budgets for predictable margins.
-
-- Privacy and compliance foundation
-	- Introduce consent controls, data retention policies, delete-my-data flows, and audit logs.
-
-- White-label offering for institutions
-	- Offer branded portals for colleges, bootcamps, and workforce programs with cohort analytics.
-
-- Outcome analytics dashboard
-	- Track conversion metrics like interview callbacks, resume score improvement, and placement success.
+MIT License — see [LICENSE](LICENSE) for details.

@@ -95,8 +95,11 @@ function toSafeText(value: string | undefined | null): string {
 }
 
 function stripMarkdown(value: string): string {
-  return toSafeText(value)
-    .replace(/```[\s\S]*?```/g, ' ')
+  let result = value
+    .replace(/```[\s\S]*?```/g, (match) => {
+      const inner = match.replace(/^```[\s\S]*?\n/, '').replace(/\n```$/, '');
+      return inner.trim() || ' ';
+    })
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')
@@ -105,9 +108,8 @@ function stripMarkdown(value: string): string {
     .replace(/~~([^~]+)~~/g, '$1')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)')
     .replace(/^>\s?/g, '')
-    .replace(/^#+\s*/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/^#+\s*/g, '');
+  return toSafeText(result);
 }
 
 function wrapText(value: string, maxLength = 95): string[] {
