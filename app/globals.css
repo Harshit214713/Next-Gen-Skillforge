@@ -204,4 +204,13 @@
     background-color: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
+    a.bg-primary:hover {
+    color: hsl(var(--primary-foreground));
+  }
+  html:not([data-theme='dark']) a.bg-accent:hover {
+    color: hsl(var(--foreground));
+  }
+  html[data-theme='dark'] a.bg-accent:hover {
+    color: hsl(var(--accent-foreground));
+  }
 }
