@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { escapePdfText } from '../../src/routes/report';
 
 // Re-implement pure report utilities for isolated testing
 function toSafeText(value: string | undefined | null): string {
@@ -41,12 +42,6 @@ function wrapText(value: string, maxLength = 95): string[] {
   return lines.length > 0 ? lines : ['N/A'];
 }
 
-function escapePdfText(value: string): string {
-  return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)');
-}
 
 describe('report utilities', () => {
   describe('toSafeText', () => {
@@ -118,6 +113,21 @@ describe('report utilities', () => {
 
     it('escapes parentheses', () => {
       expect(escapePdfText('a(b)c')).toBe('a\\(b\\)c');
+    });
+
+    it('transliterates en-dash and em-dash to hyphen', () => {
+      expect(escapePdfText('2\u20134 weeks')).toBe('2-4 weeks');
+      expect(escapePdfText('term\u2014definition')).toBe('term-definition');
+    });
+
+    it('normalizes curly quotes to standard ASCII quotes', () => {
+      expect(escapePdfText('\u201Cquoted\u201D')).toBe('"quoted"');
+      expect(escapePdfText('\u2018single\u2019')).toBe("'single'");
+    });
+
+    it('normalizes accented characters to ASCII equivalents', () => {
+      expect(escapePdfText('r\u00E9sum\u00E9')).toBe('resume');
+      expect(escapePdfText('Jos\u00E9')).toBe('Jose');
     });
   });
 });

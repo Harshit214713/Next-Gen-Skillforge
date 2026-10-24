@@ -145,8 +145,18 @@ function pushSection(lines: StyledLine[], title: string, values: string[]) {
   }
 }
 
-function escapePdfText(value: string): string {
-  return value
+export function escapePdfText(value: string): string {
+  const sanitized = value
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2022/g, '-')
+    .replace(/\u2026/g, '...')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '');
+
+  return sanitized
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
     .replace(/\)/g, '\\)');
