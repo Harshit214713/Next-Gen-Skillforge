@@ -10,6 +10,7 @@ import {
   type Env,
 } from '../src/session';
 import type { DashboardSessionData } from '../src/types';
+import { loadSession } from '../src/store';
 
 const mockSecret = 'test-secret-minimum-thirty-two-characters-long';
 
@@ -136,5 +137,54 @@ describe('cookie helpers', () => {
     const cookie = clearSessionCookie();
     expect(cookie).toContain('session=');
     expect(cookie).toContain('Max-Age=0');
+  });
+});
+
+
+describe('loadSession store priority', () => {
+  it('prefers KV store and does not query D1 when KV has session data', async () => {
+    const userId = 'kv-user-123';
+    const kvData: DashboardSessionData = { preferences: { theme: 'dark' } };
+    await mockEnv.SESSION_KV.put(`session:${userId}`, JSON.stringify(kvData));
+
+    const d1First = vi.fn();
+    const envWithD1: Env = {
+      ...mockEnv,
+      DB: {
+        prepare: vi.fn(() => ({
+          bind: vi.fn(() => ({ first: d1First, run: vi.fn() })),
+        })),
+      },
+    };
+
+    const encrypted = await encryptValue(JSON.stringify({ id: userId }), mockSecret);
+    const result = await loadSession(envWithD1, `session=${encrypted}`);
+
+    expect(result.userId).toBe(userId);
+    expect(result.session.preferences?.theme).toBe('dark');
+    expect(d1First).not.toHaveBeenCalled();
+  });
+
+  it('falls back to D1 and rehydrates KV on cache miss', async () => {
+    const userId = 'd1-user-456';
+    const d1Data: DashboardSessionData = { preferences: { theme: 'light' } };
+    const d1First = vi.fn(async () => ({ data: JSON.stringify(d1Data) })) as unknown as <T>() => Promise<T | null>;
+
+    const envWithD1: Env = {
+      ...mockEnv,
+      DB: {
+        prepare: vi.fn(() => ({
+          bind: vi.fn(() => ({ first: d1First, run: vi.fn() })),
+        })),
+      },
+    };
+
+    const encrypted = await encryptValue(JSON.stringify({ id: userId }), mockSecret);
+    const result = await loadSession(envWithD1, `session=${encrypted}`);
+
+    expect(result.userId).toBe(userId);
+    expect(result.session.preferences?.theme).toBe('light');
+    expect(d1First).toHaveBeenCalled();
+    expect(await mockEnv.SESSION_KV.get(`session:${userId}`)).toBe(JSON.stringify(d1Data));
   });
 });

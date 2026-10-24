@@ -75,6 +75,11 @@ export async function loadSession(
     return { session: {}, userId: null };
   }
 
+  const stored = parseStored(await env.SESSION_KV.get(`${KV_KEY_PREFIX}${userId}`));
+  if (stored) {
+    return { session: stored, userId };
+  }
+
   const fromD1 = await readFromD1(env, userId);
   if (fromD1) {
     // Rehydrate KV so the rolling TTL stays fresh for cookie-only sessions.
@@ -82,11 +87,6 @@ export async function loadSession(
       expirationTtl: SESSION_TTL_SECONDS,
     });
     return { session: fromD1, userId };
-  }
-
-  const stored = parseStored(await env.SESSION_KV.get(`${KV_KEY_PREFIX}${userId}`));
-  if (stored) {
-    return { session: stored, userId };
   }
 
   // Cookie references a record that no longer exists (expired/rotated).
