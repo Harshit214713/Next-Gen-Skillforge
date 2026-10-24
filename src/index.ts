@@ -21,10 +21,17 @@ export interface WorkerEnv extends Env {
 
 type AppVariables = { session: DashboardSessionData; userId: string | null; secure: boolean };
 
+export function isAllowedOrigin(origin: string): boolean {
+  if (origin === 'http://localhost:3000' || origin === 'http://localhost:8787') return true;
+  if (/^https:\/\/[a-z0-9-]+\.workers\.dev$/i.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.pages\.dev$/i.test(origin)) return true;
+  return false;
+}
+
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:8787', 'https://*.workers.dev', 'https://*.pages.dev'],
+  origin: (origin) => (origin && isAllowedOrigin(origin) ? origin : null),
   allowHeaders: ['Content-Type', 'Cookie'],
   allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   credentials: true,
