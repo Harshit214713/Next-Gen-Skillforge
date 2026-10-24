@@ -237,7 +237,9 @@ export default function ProfilePage() {
 
     setAnalyzing(true);
     try {
-      await apiPost('/api/session/preferences', { links });
+      if (hasAnyLink) {
+        await apiPost('/api/session/preferences', { links });
+      }
       const response = (await apiPost('/api/analyze', {})) as {
         engine?: string;
         warnings?: Array<{ source: string; reason: string }>;
@@ -286,7 +288,7 @@ export default function ProfilePage() {
             Connect your professional profiles and resume for analysis.
           </p>
         </div>
-        <Button onClick={handleAnalyze} disabled={!hasAnyLink || saving || analyzing} className="flex items-center gap-2">
+        <Button onClick={handleAnalyze} disabled={(!hasAnyLink && !resumeFileName) || saving || analyzing} className="flex items-center gap-2">
           <Sparkles className={`h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />
           {analyzing ? 'Analyzing...' : 'Save & Analyze'}
         </Button>
