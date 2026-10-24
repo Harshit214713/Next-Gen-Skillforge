@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Menu, Sun, Moon, LayoutDashboard, User, Activity, BookOpen, FileText, X } from 'lucide-react';
@@ -18,6 +19,7 @@ export function Sidebar() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -82,14 +84,21 @@ export function Sidebar() {
           <nav className="flex-1 px-4 space-y-1 py-4">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-secondary text-primary font-semibold'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                  )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn('h-5 w-5', isActive ? 'text-primary' : 'text-muted-foreground')} />
                   {item.label}
                 </Link>
               );
