@@ -65,7 +65,7 @@ const LINK_FIELDS: Array<{
   {
     key: 'resume',
     label: 'Resume URL',
-    placeholder: 'https://example.com/resume.pdf',
+    placeholder: 'https://example.com/resume.html',
     icon: <BookOpen className="h-4 w-4" />,
   },
 ];

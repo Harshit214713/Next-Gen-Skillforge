@@ -132,8 +132,23 @@ async function scrapeDevTo(url: string): Promise<ScrapedSource> {
 }
 
 async function scrapeGeneric(url: string, source: string): Promise<ScrapedSource> {
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.toLowerCase().endsWith('.pdf')) {
+      throw new Error('Direct PDF parsing over HTTP is not supported. Please import a plain-text (.txt) resume.');
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('PDF')) throw err;
+  }
+
   const response = await fetchWithTimeout(url);
   if (!response.ok) throw new Error(`Fetch failed (${response.status})`);
+
+  const contentType = (response.headers.get('content-type') || '').toLowerCase();
+  if (contentType.includes('application/pdf')) {
+    throw new Error('Direct PDF parsing over HTTP is not supported. Please import a plain-text (.txt) resume.');
+  }
+
   const html = await response.text();
 
   const title = extractTitle(html);
