@@ -19,6 +19,69 @@ const SCRAPE_HEADERS = {
 };
 
 const FETCH_TIMEOUT_MS = 9000;
+const MAX_SCRAPE_BYTES = 512 * 1024; // 512 KB
+
+export function isPublicUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname.endsWith('.localhost') ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+      hostname === '169.254.169.254'
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readResponseTextWithLimit(response: Response, maxBytes = MAX_SCRAPE_BYTES): Promise<string> {
+  const contentLength = Number(response.headers.get('content-length'));
+  if (!isNaN(contentLength) && contentLength > maxBytes * 4) {
+    throw new Error('Response body exceeds maximum allowed size');
+  }
+
+  if (!response.body || typeof response.body.getReader !== 'function') {
+    const fullText = await response.text();
+    return fullText.slice(0, maxBytes);
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (totalBytes < maxBytes) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        chunks.push(value);
+        totalBytes += value.byteLength;
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(combined);
+}
 
 async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
   return fetch(url, {
@@ -132,9 +195,24 @@ async function scrapeDevTo(url: string): Promise<ScrapedSource> {
 }
 
 async function scrapeGeneric(url: string, source: string): Promise<ScrapedSource> {
+  if (!isPublicUrl(url)) {
+    throw new Error('URL must be a public HTTP or HTTPS address');
+  }
+
   const response = await fetchWithTimeout(url);
   if (!response.ok) throw new Error(`Fetch failed (${response.status})`);
-  const html = await response.text();
+
+  const contentType = (response.headers.get('content-type') || '').toLowerCase();
+  if (
+    contentType &&
+    !contentType.includes('text/html') &&
+    !contentType.includes('text/plain') &&
+    !contentType.includes('application/xhtml+xml')
+  ) {
+    throw new Error(`Unsupported content type (${contentType.split(';')[0]})`);
+  }
+
+  const html = await readResponseTextWithLimit(response);
 
   const title = extractTitle(html);
   const description = extractMeta(html, /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i)

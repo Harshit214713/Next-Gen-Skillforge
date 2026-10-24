@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { detectSkills, mergeDetected } from '../../src/engine/skills';
-import { stripHtml, usernameFromUrl } from '../../src/engine/scrape';
+import { stripHtml, usernameFromUrl, isPublicUrl } from '../../src/engine/scrape';
 import { detectFocusArea, buildProfile } from '../../src/engine/build';
 
 describe('detectSkills', () => {
@@ -133,5 +133,31 @@ describe('buildProfile', () => {
     expect(a.learningPath.length).toBeGreaterThan(0);
     expect(a.aiSummary.industryRelevanceScore).toBeGreaterThanOrEqual(0);
     expect(a.aiSummary.industryRelevanceScore).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('isPublicUrl', () => {
+  it('accepts public http/https URLs', () => {
+    expect(isPublicUrl('https://example.com/profile')).toBe(true);
+    expect(isPublicUrl('http://myportfolio.dev')).toBe(true);
+  });
+
+  it('rejects localhost and loopback addresses', () => {
+    expect(isPublicUrl('http://localhost:3000')).toBe(false);
+    expect(isPublicUrl('http://127.0.0.1:8787')).toBe(false);
+    expect(isPublicUrl('http://[::1]')).toBe(false);
+  });
+
+  it('rejects private network IP ranges and metadata endpoints', () => {
+    expect(isPublicUrl('http://10.0.0.1/admin')).toBe(false);
+    expect(isPublicUrl('http://192.168.1.1')).toBe(false);
+    expect(isPublicUrl('http://172.16.0.5')).toBe(false);
+    expect(isPublicUrl('http://169.254.169.254/latest/meta-data')).toBe(false);
+  });
+
+  it('rejects non-http protocols and malformed strings', () => {
+    expect(isPublicUrl('ftp://files.org')).toBe(false);
+    expect(isPublicUrl('javascript:alert(1)')).toBe(false);
+    expect(isPublicUrl('not-a-url')).toBe(false);
   });
 });
