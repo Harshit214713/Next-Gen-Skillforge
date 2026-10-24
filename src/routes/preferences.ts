@@ -64,29 +64,42 @@ app.post('/', async (c) => {
 
   const payload = (body ?? {}) as Record<string, unknown>;
   const theme = sanitizeTheme(payload.theme);
-  const links = sanitizeLinks(payload.links);
-
-  const hasLinks = Object.keys(links).length > 0;
+  const rawLinks = payload.links && typeof payload.links === 'object' ? (payload.links as Record<string, unknown>) : null;
+  const linkKeysPresent = rawLinks ? LINK_KEYS.filter((k) => k in rawLinks) : [];
+  const hasLinkUpdates = linkKeysPresent.length > 0;
   const hasTheme = typeof theme !== 'undefined';
 
-  if (!hasTheme && !hasLinks) {
+  if (!hasTheme && !hasLinkUpdates) {
     return c.json({ error: 'No valid preference values provided in payload.' }, 400);
   }
 
   const session = c.get('session');
   const previousPreferences = session.preferences ?? {};
+  const nextLinks = { ...(previousPreferences.links ?? {}) };
 
-  const nextLinks = hasLinks ? { ...previousPreferences.links, ...links } : previousPreferences.links;
+  if (hasLinkUpdates) {
+    for (const key of linkKeysPresent) {
+      const val = rawLinks![key];
+      if (typeof val === 'string') {
+        const sanitized = sanitizeLinkValue(val);
+        if (sanitized) {
+          nextLinks[key] = sanitized;
+        } else if (!val.trim()) {
+          delete nextLinks[key];
+        }
+      }
+    }
+  }
 
   session.preferences = {
     ...previousPreferences,
     ...(hasTheme ? { theme } : {}),
-    ...(hasLinks ? { links: nextLinks } : {}),
+    ...(hasLinkUpdates ? { links: nextLinks } : {}),
   };
 
   // Changing links invalidates any stored analysis (signature mismatch).
   const hadAnalysis = Boolean(session.analysis);
-  if (hasLinks && session.analysis) {
+  if (hasLinkUpdates && session.analysis) {
     delete session.analysis;
   }
 
@@ -96,7 +109,7 @@ app.post('/', async (c) => {
     {
       ok: true,
       preferences: session.preferences,
-      analysisCleared: hasLinks && hadAnalysis,
+      analysisCleared: hasLinkUpdates && hadAnalysis,
     },
     { headers: { 'Set-Cookie': makeSessionCookie(cookieValue, c.get('secure')) } },
   );

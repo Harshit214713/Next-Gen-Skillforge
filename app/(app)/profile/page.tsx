@@ -159,10 +159,10 @@ export default function ProfilePage() {
     }
 
     const hasLinks = Object.values(links).some((v) => v.trim());
-    if (!hasLinks) {
+    if (!hasLinks && !resumeFileName) {
       toast({
-        title: 'No links provided',
-        description: 'Add at least one profile link to continue.',
+        title: 'No profile data',
+        description: 'Add at least one profile link or upload a resume to save.',
         variant: 'destructive',
       });
       return;
@@ -357,11 +357,11 @@ export default function ProfilePage() {
                           error={error}
                         />
                       )}
-                      {error && (
+                      {(error || Boolean(links[field.key])) && (
                         <button
                           type="button"
                           onClick={() => handleDeleteLink(field.key)}
-                          className="mt-1 p-1.5 text-destructive hover:bg-destructive/10 rounded"
+                          className="mt-1 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                           aria-label="Clear field"
                         >
                           <AlertCircle className="h-4 w-4" />
